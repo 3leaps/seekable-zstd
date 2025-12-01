@@ -1,0 +1,16 @@
+version: v1.0.0
+binDir: ./bin
+tools:
+  - id: goneat
+    description: Fulmen schema validation and automation CLI
+    required: true
+    install:
+      type: download
+      url: https://github.com/fulmenhq/goneat/releases/download/v0.3.8/goneat_v0.3.8_{{os}}_{{arch}}.tar.gz
+      binName: goneat
+      destination: ./bin
+      checksum:
+        darwin-arm64: "ce1509344b615db30e1fd6addfbf0f57451dc07459bad66fb1291942f3235d79"
+        darwin-amd64: "e373d8a644577d2bbcf5645d11f333b5203664a303ebc7c47c03ab9c9068eb85"
+        linux-amd64: "2614bf090aefb99ae76fd75d9a73da47d5b6c5f10a6db3b792dd9c0f4bfb9d50"
+        linux-arm64: "9d3c4e2f159451b0dd9ba726e5126792bb949e8fdb7d0dfb92f018aba9258b79"

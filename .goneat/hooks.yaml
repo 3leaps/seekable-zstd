@@ -1,0 +1,12 @@
+version: "1.0.0"
+hooks:
+  pre-commit:
+    - command: "make"
+      args: ["quality"]
+      priority: 10
+      timeout: "2m"
+  pre-push:
+    - command: "make"
+      args: ["test"]
+      priority: 10
+      timeout: "5m"

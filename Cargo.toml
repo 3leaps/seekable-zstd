@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "crates/seekable-zstd-core",
+]
+resolver = "2"

@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 rust-version = "1.70"
 
+[lib]
+crate-type = ["lib", "staticlib"]
+
 [dependencies]
 zeekstd = "0.3"
 rayon = "1.10"

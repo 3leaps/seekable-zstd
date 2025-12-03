@@ -1,0 +1,39 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "seekable-zstd"
+version = "0.1.0"
+description = "Seekable zstd compression with parallel decompression"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "maturin>=1.5,<2.0",
+    "pytest>=8.0",
+    "ruff>=0.8",
+    "mypy>=1.0",
+]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+python-source = "python"
+module-name = "seekable_zstd"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "UP", "C4", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true

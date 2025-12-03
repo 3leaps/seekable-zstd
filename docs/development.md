@@ -21,8 +21,36 @@ This guide covers development setup, workflow, and tooling for seekable-zstd.
 | goneat | Hooks, formatting, assessment | See below |
 | ripgrep | Fast code search | `brew install ripgrep` |
 | cbindgen | C header generation | `cargo install cbindgen` |
-| maturin | Python wheel building | `pip install maturin` |
+| uv | Python package management | See below |
 | cargo-tarpaulin | Rust coverage | `cargo install cargo-tarpaulin` |
+
+### Python Development with uv
+
+We use [uv](https://docs.astral.sh/uv/) as the standard Python package manager for this project. Other package managers (pip, poetry, etc.) will also work, but uv is recommended for consistency.
+
+**Install uv:**
+```bash
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Or via Homebrew
+brew install uv
+```
+
+**Python binding development:**
+```bash
+cd crates/seekable-zstd-py
+
+# Sync dev dependencies and build
+uv sync --group dev
+
+# Run tests
+uv run pytest tests/
+
+# Run linting
+uv run ruff check .
+uv run mypy python/
+```
 
 ### Installing goneat
 

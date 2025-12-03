@@ -44,6 +44,6 @@ Pre-built static libraries are included for Linux (amd64/arm64) and macOS (amd64
 
 ## Build Requirements
 
-- Go 1.20+
+- Go 1.21+
 - Rust 1.70+ (if rebuilding from source)
 - CGO enabled

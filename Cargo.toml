@@ -1,5 +1,5 @@
 [workspace]
-members = [
+members = ["bindings/nodejs",
     "crates/seekable-zstd-core", "crates/seekable-zstd-py",
 ]
 resolver = "2"

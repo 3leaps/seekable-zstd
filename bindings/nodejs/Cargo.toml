@@ -1,0 +1,17 @@
+[package]
+name = "seekable-zstd-node"
+version = "0.1.0"
+edition = "2021"
+# Upgrade rust-version to 1.77 to support modern cargo syntax used by deps
+rust-version = "1.77"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+napi = { version = "2", features = ["napi4"] }
+napi-derive = "2"
+seekable-zstd-core = { path = "../../crates/seekable-zstd-core" }
+
+[build-dependencies]
+napi-build = "2"

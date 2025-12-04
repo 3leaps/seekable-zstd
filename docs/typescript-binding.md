@@ -16,9 +16,9 @@ const { Reader } = require('seekable-zstd');
 const reader = new Reader("archive.szst");
 try {
   console.log(`Decompressed size: ${reader.size}`);
-  
+
   // Read first 100 bytes
-  const data = reader.readRange(0n, 100n);
+  const data = reader.readRange(0, 100);
   console.log(data.toString());
 } finally {
   // Resources are managed by GC, but explicit cleanup is good practice if implemented
@@ -31,15 +31,15 @@ try {
 
 Opens a seekable zstd archive.
 
-### `reader.size` (BigInt)
+### `reader.size` (Number)
 
-Returns the total decompressed size.
+Returns the total decompressed size (as i64, safe up to 9 exabytes).
 
-### `reader.frameCount` (BigInt)
+### `reader.frameCount` (Number)
 
 Returns the number of frames.
 
 ### `reader.readRange(start, end)`
 
-Reads bytes from `start` (inclusive) to `end` (exclusive). Both arguments must be `BigInt`.
+Reads bytes from `start` (inclusive) to `end` (exclusive).
 Returns a `Buffer`.

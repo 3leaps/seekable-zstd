@@ -1,5 +1,7 @@
 use crate::error::Error;
+use std::fs::File;
 use std::io::{Read, Seek};
+use std::path::Path;
 
 pub struct Decoder<'a, R: Read + Seek> {
     inner: zeekstd::Decoder<'a, R>,
@@ -114,6 +116,25 @@ impl<R: Read + Seek> Decoder<'_, R> {
 
         let end_idx = std::cmp::min(skip + len, available);
         Ok(temp_buf[skip..end_idx].to_vec())
+    }
+}
+
+impl Decoder<'_, File> {
+    /// Opens a seekable zstd archive from a file path.
+    ///
+    /// This is a convenience method equivalent to:
+    /// ```ignore
+    /// let file = File::open(path)?;
+    /// Decoder::new(file)
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be opened or if the decoder
+    /// cannot be initialized.
+    pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
+        let file = File::open(path)?;
+        Self::new(file)
     }
 }
 

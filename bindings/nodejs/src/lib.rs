@@ -6,7 +6,7 @@ use seekable_zstd_core::ParallelDecoder;
 
 #[napi]
 pub struct Reader {
-    inner: ParallelDecoder,
+    inner: Option<ParallelDecoder>,
 }
 
 #[napi]
@@ -15,27 +15,37 @@ impl Reader {
     pub fn new(path: String) -> Result<Self> {
         let inner = ParallelDecoder::open(path)
             .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
-        Ok(Reader { inner })
+        Ok(Reader { inner: Some(inner) })
     }
 
     #[napi(getter)]
-    pub fn size(&self) -> i64 {
-        self.inner.size() as i64
+    pub fn size(&self) -> Result<i64> {
+        match &self.inner {
+            Some(inner) => Ok(inner.size() as i64),
+            None => Err(Error::new(Status::GenericFailure, "Reader is closed")),
+        }
     }
 
     #[napi(getter)]
-    pub fn frame_count(&self) -> i64 {
-        self.inner.frame_count() as i64
+    pub fn frame_count(&self) -> Result<i64> {
+        match &self.inner {
+            Some(inner) => Ok(inner.frame_count() as i64),
+            None => Err(Error::new(Status::GenericFailure, "Reader is closed")),
+        }
     }
 
     #[napi]
     pub fn read_range(&self, start: i64, end: i64) -> Result<Buffer> {
+        let inner = self
+            .inner
+            .as_ref()
+            .ok_or_else(|| Error::new(Status::GenericFailure, "Reader is closed"))?;
+
         let start_u64 = start as u64;
         let end_u64 = end as u64;
 
         let range = vec![(start_u64, end_u64)];
-        let results = self
-            .inner
+        let results = inner
             .read_ranges(&range)
             .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
 
@@ -44,5 +54,12 @@ impl Reader {
         } else {
             Ok(Buffer::from(&[][..]))
         }
+    }
+
+    /// Closes the reader and releases resources.
+    /// After calling close(), any further operations will throw an error.
+    #[napi]
+    pub fn close(&mut self) {
+        self.inner = None;
     }
 }

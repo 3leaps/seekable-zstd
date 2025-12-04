@@ -52,6 +52,22 @@ impl Reader {
         }
         Ok(py_results)
     }
+
+    fn __enter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    #[pyo3(signature = (_exc_type=None, _exc_val=None, _exc_tb=None))]
+    fn __exit__(
+        &self,
+        _exc_type: Option<PyObject>,
+        _exc_val: Option<PyObject>,
+        _exc_tb: Option<PyObject>,
+    ) -> bool {
+        // No cleanup needed - ParallelDecoder doesn't hold open file handles
+        // Return false to not suppress exceptions
+        false
+    }
 }
 
 #[pymodule]

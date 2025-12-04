@@ -4,3 +4,18 @@ Cargo.lock
 /bin/
 .goneat/hooks/
 *.bk
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.venv/
+*.whl
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# Node.js
+node_modules/
+*.node

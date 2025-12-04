@@ -25,3 +25,17 @@ def test_reader_fixture(tmp_path):
 
     data = reader.read_range(6, 11)
     assert data == b"World"
+
+
+def test_context_manager():
+    """Test that Reader works as a context manager."""
+    fixture_path = os.path.join(os.path.dirname(__file__), "../../../tests/fixtures/hello.szst")
+    fixture_path = os.path.abspath(fixture_path)
+
+    if not os.path.exists(fixture_path):
+        pytest.skip(f"Fixture not found at {fixture_path}")
+
+    with Reader(fixture_path) as reader:
+        assert reader.size() == 11
+        data = reader.read_range(0, 5)
+        assert data == b"Hello"

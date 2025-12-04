@@ -95,7 +95,7 @@ with Reader("archive.szst") as r:
 ### Go
 
 ```go
-import "github.com/3leaps/seekable-zstd/bindings/go/seekable"
+import seekable "github.com/3leaps/seekable-zstd/bindings/go"
 
 reader, err := seekable.Open("archive.szst")
 if err != nil {
@@ -114,7 +114,7 @@ import { Reader } from "seekable-zstd";
 const reader = new Reader("archive.szst");
 console.log(`Size: ${reader.size}, Frames: ${reader.frameCount}`);
 
-const data = reader.readRange(1000n, 2000n);
+const data = reader.readRange(1000, 2000);
 reader.close();
 ```
 

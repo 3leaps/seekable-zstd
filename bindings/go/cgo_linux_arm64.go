@@ -1,8 +1,8 @@
-//go:build linux && arm64
+//go:build linux && arm64 && !musl
 
 package seekable
 
 /*
-#cgo LDFLAGS: -L${SRCDIR}/lib/linux-arm64 -lseekable_zstd_core -lm -ldl -lpthread
+#cgo LDFLAGS: -L${SRCDIR}/lib/linux-arm64 -lseekable_zstd_core -lm -lpthread
 */
 import "C"

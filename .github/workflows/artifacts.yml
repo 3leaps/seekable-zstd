@@ -7,71 +7,89 @@ on:
       - 'v*'
 
 jobs:
-  build-libs:
-    name: Build Static Libs
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            arch: linux-amd64
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            arch: linux-arm64
-            cross: true
-          - os: macos-latest
-            target: x86_64-apple-darwin
-            arch: darwin-amd64
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            arch: darwin-arm64
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            arch: windows-amd64
-
+  build-linux:
+    name: Build Linux Libs
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
 
-      - name: Install Cross
-        if: ${{ matrix.cross }}
-        run: cargo install cross
-
-      - name: Build
-        shell: bash
+      - name: Install cargo-zigbuild
         run: |
-          CMD="cargo"
-          if [ "${{ matrix.cross }}" == "true" ]; then
-            CMD="cross"
-          fi
-          
-          echo "Building for ${{ matrix.target }}..."
-          $CMD build --release --target ${{ matrix.target }} -p seekable-zstd-core
-          
-          # Prepare output directory
-          mkdir -p bindings/go/lib/${{ matrix.arch }}
-          
-          # Copy artifact (name depends on OS)
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            cp target/${{ matrix.target }}/release/seekable_zstd_core.lib bindings/go/lib/${{ matrix.arch }}/
-          else
-            cp target/${{ matrix.target }}/release/libseekable_zstd_core.a bindings/go/lib/${{ matrix.arch }}/
-          fi
+          pip install ziglang
+          cargo install cargo-zigbuild
 
-      - name: Upload Artifact
+      - name: Build AMD64
+        run: |
+          # glibc (2.17 for broad compatibility)
+          cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.17 -p seekable-zstd-core
+          # musl
+          cargo zigbuild --release --target x86_64-unknown-linux-musl -p seekable-zstd-core
+
+      - name: Build ARM64
+        run: |
+          # glibc (2.17)
+          cargo zigbuild --release --target aarch64-unknown-linux-gnu.2.17 -p seekable-zstd-core
+          # musl
+          cargo zigbuild --release --target aarch64-unknown-linux-musl -p seekable-zstd-core
+
+      - name: Organize Artifacts
+        run: |
+          mkdir -p dist/linux-amd64
+          cp target/x86_64-unknown-linux-gnu/release/libseekable_zstd_core.a dist/linux-amd64/
+          
+          mkdir -p dist/linux-amd64-musl
+          cp target/x86_64-unknown-linux-musl/release/libseekable_zstd_core.a dist/linux-amd64-musl/
+          
+          mkdir -p dist/linux-arm64
+          cp target/aarch64-unknown-linux-gnu/release/libseekable_zstd_core.a dist/linux-arm64/
+          
+          mkdir -p dist/linux-arm64-musl
+          cp target/aarch64-unknown-linux-musl/release/libseekable_zstd_core.a dist/linux-arm64-musl/
+
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: lib-${{ matrix.arch }}
-          path: bindings/go/lib/${{ matrix.arch }}/*
+          name: linux-libs
+          path: dist/*
+
+  build-macos:
+    name: Build macOS Libs
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+
+      - name: Build
+        run: |
+          cargo build --release --target x86_64-apple-darwin -p seekable-zstd-core
+          cargo build --release --target aarch64-apple-darwin -p seekable-zstd-core
+
+      - name: Organize Artifacts
+        run: |
+          mkdir -p dist/darwin-amd64
+          cp target/x86_64-apple-darwin/release/libseekable_zstd_core.a dist/darwin-amd64/
+          
+          mkdir -p dist/darwin-arm64
+          cp target/aarch64-apple-darwin/release/libseekable_zstd_core.a dist/darwin-arm64/
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-libs
+          path: dist/*
 
   commit-artifacts:
     name: Commit Artifacts
-    needs: build-libs
+    needs: [build-linux, build-macos]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -84,13 +102,16 @@ jobs:
 
       - name: Organize artifacts
         run: |
-          mkdir -p bindings/go/lib
-          # Move from download-libs/lib-ARCH/* to bindings/go/lib/ARCH/
-          for dir in download-libs/lib-*; do
-            arch=${dir#download-libs/lib-}
-            mkdir -p bindings/go/lib/$arch
-            cp $dir/* bindings/go/lib/$arch/
-          done
+          # The download-artifact action downloads to download-libs/{artifact-name}/*
+          # We need to move them to bindings/go/lib/{arch}/
+          
+          # Linux
+          cp -r download-libs/linux-libs/* bindings/go/lib/
+          
+          # macOS
+          cp -r download-libs/macos-libs/* bindings/go/lib/
+          
+          echo "Artifact structure:"
           ls -R bindings/go/lib
 
       - name: Commit and Push

@@ -32,13 +32,19 @@ format-check:
 lint:
 	cargo clippy -- -D warnings
 	cd bindings/go && go vet ./...
+	# Check Python linting (if ruff is installed)
+	if command -v ruff >/dev/null; then ruff check crates/seekable-zstd-py; fi
+	# Check Node.js (if npm is installed)
+	if command -v npm >/dev/null && [ -d bindings/nodejs/node_modules ]; then \
+		cd bindings/nodejs && npm run build; \
+	fi
 
 .PHONY: test-fast
 test-fast:
 	cargo test --lib
 
 .PHONY: test
-test: test-rust test-go
+test: test-rust test-go test-python test-node
 
 .PHONY: test-rust
 test-rust:
@@ -47,6 +53,24 @@ test-rust:
 .PHONY: test-go
 test-go: build-rust-lib
 	cd bindings/go && go test ./...
+
+.PHONY: test-python
+test-python:
+	# Requires dev dependencies installed via uv or pip
+	if command -v pytest >/dev/null; then \
+		cd crates/seekable-zstd-py && maturin develop && pytest; \
+	else \
+		echo "Skipping Python tests (pytest not found)"; \
+	fi
+
+.PHONY: test-node
+test-node:
+	# Requires npm dependencies
+	if command -v npm >/dev/null && [ -d bindings/nodejs/node_modules ]; then \
+		cd bindings/nodejs && npm test; \
+	else \
+		echo "Skipping Node.js tests (npm modules not installed)"; \
+	fi
 
 .PHONY: build-rust-lib
 build-rust-lib:
@@ -148,7 +172,8 @@ _set-version:
 	sed -i '' 's/^version = ".*"/version = "$(VERSION)"/' crates/seekable-zstd-py/pyproject.toml
 	
 	# Update Go binding documentation (Go versioning is via git tags, but docs reference it)
-	# We don't update go.mod version as it tracks the go language version, not package version
+	# Also update the Version() constant in seekable.go
+	sed -i '' 's/return ".*"/return "$(VERSION)"/' bindings/go/seekable.go
 	
 	@echo "Updated all versions to $(VERSION)"
 

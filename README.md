@@ -212,6 +212,7 @@ For detailed usage instructions and platform-specific details, please refer to t
 
 - [Development Guide](docs/development.md) - Setup, workflow, hooks
 - [Standards](docs/standards/README.md) - Coding and testing standards
+- [Versioning](docs/versioning.md) - Versioning policy and access guide
 
 
 ## License

@@ -56,9 +56,7 @@ int32_t seekable_read_range(struct SeekableDecoder *decoder,
  * `decoder` must be a valid pointer returned by `seekable_open`.
  * `starts` and `ends` must point to arrays of `count` u64 values.
  * `out_buffers` must point to an array of `count` buffer pointers.
- * `out_lengths` must point to an array of `count` size_t values.
- * Each `out_buffers[i]` must point to a buffer of at least `out_lengths[i]` bytes.
- * On success, `out_lengths[i]` is updated to the actual bytes written.
+ * `out_lengths` must point to an array of `count` `size_t` values.
  */
 int32_t seekable_read_ranges(const struct SeekableDecoder *decoder,
                              const uint64_t *starts,

@@ -9,7 +9,7 @@ rust-version = "1.77"
 crate-type = ["cdylib"]
 
 [dependencies]
-napi = { version = "2", features = ["napi4"] }
+napi = { version = "2", features = ["napi4", "tokio_rt"] }
 napi-derive = "2"
 seekable-zstd-core = { path = "../../crates/seekable-zstd-core" }
 

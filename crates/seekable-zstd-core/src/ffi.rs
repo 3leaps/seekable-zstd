@@ -168,9 +168,7 @@ pub unsafe extern "C" fn seekable_read_range(
 /// `decoder` must be a valid pointer returned by `seekable_open`.
 /// `starts` and `ends` must point to arrays of `count` u64 values.
 /// `out_buffers` must point to an array of `count` buffer pointers.
-/// `out_lengths` must point to an array of `count` size_t values.
-/// Each `out_buffers[i]` must point to a buffer of at least `out_lengths[i]` bytes.
-/// On success, `out_lengths[i]` is updated to the actual bytes written.
+/// `out_lengths` must point to an array of `count` `size_t` values.
 #[no_mangle]
 pub unsafe extern "C" fn seekable_read_ranges(
     decoder: *const SeekableDecoder,
@@ -210,11 +208,14 @@ pub unsafe extern "C" fn seekable_read_ranges(
     // Verify buffer sizes
     let lengths_slice = unsafe { std::slice::from_raw_parts(out_lengths, count) };
     for (i, ((start, end), &cap)) in ranges.iter().zip(lengths_slice.iter()).enumerate() {
-        let needed = (end - start) as usize;
+        let Ok(needed) = usize::try_from(end - start) else {
+            set_error(&"Range too large for system pointer width");
+            return -4;
+        };
+
         if cap < needed {
             set_error(&format!(
-                "Buffer {} too small: provided {}, required {}",
-                i, cap, needed
+                "Buffer {i} too small: provided {cap}, required {needed}",
             ));
             return -2;
         }

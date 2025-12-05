@@ -56,6 +56,34 @@ impl Reader {
         }
     }
 
+    #[napi]
+    pub async fn read_range_async(&self, start: i64, end: i64) -> Result<Buffer> {
+        let inner_clone = self
+            .inner
+            .as_ref()
+            .ok_or_else(|| Error::new(Status::GenericFailure, "Reader is closed"))?
+            .clone();
+
+        let start_u64 = start as u64;
+        let end_u64 = end as u64;
+
+        // Offload to libuv thread pool
+        napi::tokio::task::spawn_blocking(move || {
+            let range = vec![(start_u64, end_u64)];
+            let results = inner_clone
+                .read_ranges(&range)
+                .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?;
+
+            if let Some(data) = results.first() {
+                Ok(Buffer::from(data.as_slice()))
+            } else {
+                Ok(Buffer::from(&[][..]))
+            }
+        })
+        .await
+        .map_err(|e| Error::new(Status::GenericFailure, e.to_string()))?
+    }
+
     /// Closes the reader and releases resources.
     /// After calling close(), any further operations will throw an error.
     #[napi]

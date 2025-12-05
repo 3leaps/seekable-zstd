@@ -5,6 +5,7 @@
 This document establishes language-agnostic coding standards that apply to seekable-zstd regardless of implementation language. These patterns ensure consistency, reliability, and interoperability across the library and its bindings.
 
 **Language-Specific Standards:**
+
 - [Rust](rust.md) - Core library
 - [Go](go.md) - CGO bindings
 - [Python](python.md) - PyO3 bindings
@@ -19,6 +20,7 @@ This document establishes language-agnostic coding standards that apply to seeka
 All diagnostic output (logs, debug info, status messages) goes to STDERR. STDOUT is reserved for structured data output.
 
 **Why:**
+
 - Pipelines expect clean data on STDOUT
 - CI/CD tools parse STDOUT for results
 - STDERR can be suppressed/redirected independently
@@ -95,14 +97,14 @@ throw new SeekableError(`Failed to open ${path}: ${error.message}`);
 
 ### CLI Exit Codes
 
-| Code | Meaning              | Usage                            |
-|------|----------------------|----------------------------------|
-| 0    | Success              | Operation completed successfully |
-| 1    | General error        | Catch-all for general errors     |
-| 2    | Misuse               | Invalid command-line arguments   |
-| 3    | Configuration error  | Invalid or missing configuration |
-| 4    | Input error          | Invalid input data or file       |
-| 5    | Output error         | Cannot write output              |
+| Code | Meaning             | Usage                            |
+| ---- | ------------------- | -------------------------------- |
+| 0    | Success             | Operation completed successfully |
+| 1    | General error       | Catch-all for general errors     |
+| 2    | Misuse              | Invalid command-line arguments   |
+| 3    | Configuration error | Invalid or missing configuration |
+| 4    | Input error         | Invalid input data or file       |
+| 5    | Output error        | Cannot write output              |
 
 ---
 
@@ -111,7 +113,7 @@ throw new SeekableError(`Failed to open ${path}: ${error.message}`);
 ### Log Levels
 
 | Level | Usage                        | Example                               |
-|-------|------------------------------|---------------------------------------|
+| ----- | ---------------------------- | ------------------------------------- |
 | DEBUG | Detailed diagnostic info     | "Opening file: /path/to/file.szst"    |
 | INFO  | General operational messages | "Decompressed 1.2GB in 3.4s"          |
 | WARN  | Non-fatal issues             | "Frame size smaller than recommended" |
@@ -137,6 +139,7 @@ tracing::info!(
 ### Input Validation
 
 Validate and sanitize all external input:
+
 - File paths (prevent path traversal)
 - Byte ranges (prevent out-of-bounds access)
 - Frame sizes (prevent excessive memory allocation)
@@ -158,6 +161,7 @@ Use SemVer: `MAJOR.MINOR.PATCH`
 - **PATCH:** Bug fixes, backward compatible
 
 Keep versions synchronized across:
+
 - `Cargo.toml` (Rust)
 - `go.mod` (Go)
 - `pyproject.toml` (Python)
@@ -193,6 +197,7 @@ Test fixtures in `tests/fixtures/` ensure identical behavior across all language
 ### README Requirements
 
 Every package/binding needs:
+
 - Brief description
 - Installation instructions
 - Quick start example
@@ -201,6 +206,7 @@ Every package/binding needs:
 ### Code Documentation
 
 Public APIs require:
+
 - Purpose description
 - Parameter documentation
 - Return value documentation
@@ -225,4 +231,4 @@ Before submitting code:
 
 ---
 
-*Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) coding standards.*
+_Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) coding standards._

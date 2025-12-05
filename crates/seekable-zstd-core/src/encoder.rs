@@ -105,6 +105,6 @@ mod tests {
         encoder.write_all(b"Hello World").unwrap();
         encoder.finish().unwrap();
 
-        assert!(buffer.len() > 0);
+        assert!(!buffer.is_empty());
     }
 }

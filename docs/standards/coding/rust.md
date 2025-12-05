@@ -449,4 +449,4 @@ pub extern "C" fn seekable_close(decoder: *mut SeekableDecoder) {
 
 ---
 
-*Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) Rust standards.*
+_Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) Rust standards._

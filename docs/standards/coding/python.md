@@ -301,4 +301,4 @@ strict = true
 
 ---
 
-*Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) Python standards.*
+_Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) Python standards._

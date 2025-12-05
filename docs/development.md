@@ -6,29 +6,30 @@ This guide covers development setup, workflow, and tooling for seekable-zstd.
 
 ### Required Tools
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Rust | 1.70+ | Core library |
-| Go | 1.21+ | Go bindings |
-| Python | 3.10+ | Python bindings |
-| Node.js | 18+ | TypeScript bindings |
-| Make | Any | Build orchestration |
+| Tool    | Version | Purpose             |
+| ------- | ------- | ------------------- |
+| Rust    | 1.70+   | Core library        |
+| Go      | 1.21+   | Go bindings         |
+| Python  | 3.10+   | Python bindings     |
+| Node.js | 18+     | TypeScript bindings |
+| Make    | Any     | Build orchestration |
 
 ### Optional Tools
 
-| Tool | Purpose | Installation |
-|------|---------|--------------|
-| goneat | Hooks, formatting, assessment | See below |
-| ripgrep | Fast code search | `brew install ripgrep` |
-| cbindgen | C header generation | `cargo install cbindgen` |
-| uv | Python package management | See below |
-| cargo-tarpaulin | Rust coverage | `cargo install cargo-tarpaulin` |
+| Tool            | Purpose                       | Installation                    |
+| --------------- | ----------------------------- | ------------------------------- |
+| goneat          | Hooks, formatting, assessment | See below                       |
+| ripgrep         | Fast code search              | `brew install ripgrep`          |
+| cbindgen        | C header generation           | `cargo install cbindgen`        |
+| uv              | Python package management     | See below                       |
+| cargo-tarpaulin | Rust coverage                 | `cargo install cargo-tarpaulin` |
 
 ### Python Development with uv
 
 We use [uv](https://docs.astral.sh/uv/) as the standard Python package manager for this project. Other package managers (pip, poetry, etc.) will also work, but uv is recommended for consistency.
 
 **Install uv:**
+
 ```bash
 # macOS/Linux
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -38,6 +39,7 @@ brew install uv
 ```
 
 **Python binding development:**
+
 ```bash
 cd crates/seekable-zstd-py
 
@@ -55,23 +57,27 @@ uv run mypy python/
 ### Installing goneat
 
 **macOS (Homebrew):**
+
 ```bash
 brew tap fulmenhq/tap
 brew install goneat
 ```
 
-**Windows (Scoop):** *(coming soon)*
+**Windows (Scoop):** _(coming soon)_
+
 ```powershell
 scoop bucket add fulmenhq https://github.com/fulmenhq/scoop-bucket
 scoop install goneat
 ```
 
 **From source:**
+
 ```bash
 go install github.com/fulmenhq/goneat@latest
 ```
 
 **Bootstrap script:**
+
 ```bash
 curl -sSL https://raw.githubusercontent.com/fulmenhq/goneat/main/install.sh | bash
 ```
@@ -88,6 +94,7 @@ make bootstrap
 ```
 
 The bootstrap target:
+
 1. Checks for required tools (rustup, go, python, node)
 2. Installs Rust toolchain components (rustfmt, clippy)
 3. Installs project dependencies
@@ -302,14 +309,14 @@ MAJOR.MINOR.PATCH
 
 All packages must have identical versions:
 
-| Package | Location |
-|---------|----------|
-| Rust workspace | `Cargo.toml` (workspace) |
-| Rust core | `crates/seekable-zstd-core/Cargo.toml` |
-| Rust Python | `crates/seekable-zstd-py/Cargo.toml` |
-| Python | `crates/seekable-zstd-py/pyproject.toml` |
-| TypeScript | `bindings/nodejs/package.json` |
-| Go | Git tags (`v0.1.0`) |
+| Package        | Location                                 |
+| -------------- | ---------------------------------------- |
+| Rust workspace | `Cargo.toml` (workspace)                 |
+| Rust core      | `crates/seekable-zstd-core/Cargo.toml`   |
+| Rust Python    | `crates/seekable-zstd-py/Cargo.toml`     |
+| Python         | `crates/seekable-zstd-py/pyproject.toml` |
+| TypeScript     | `bindings/nodejs/package.json`           |
+| Go             | Git tags (`v0.1.0`)                      |
 
 ### Bumping Versions
 
@@ -327,6 +334,7 @@ make bump-major
 ```
 
 These targets:
+
 1. Update all version files atomically
 2. Verify consistency
 3. Create a version commit (but do not push)
@@ -412,12 +420,12 @@ make test          # Full suite, not just cargo test
 
 ### Test Runners by Language
 
-| Language | Runner | Coverage | Benchmarks |
-|----------|--------|----------|------------|
-| Rust | `cargo test` | cargo-tarpaulin | criterion |
-| Go | `go test` | `go test -cover` | `go test -bench` |
-| Python | pytest | pytest-cov | pytest-benchmark |
-| TypeScript | vitest | vitest --coverage | vitest bench |
+| Language   | Runner       | Coverage          | Benchmarks       |
+| ---------- | ------------ | ----------------- | ---------------- |
+| Rust       | `cargo test` | cargo-tarpaulin   | criterion        |
+| Go         | `go test`    | `go test -cover`  | `go test -bench` |
+| Python     | pytest       | pytest-cov        | pytest-benchmark |
+| TypeScript | vitest       | vitest --coverage | vitest bench     |
 
 ### Coverage Tools
 
@@ -443,11 +451,13 @@ npm run test -- --coverage
 The repository uses GitHub Actions for CI. Key workflows:
 
 **`.github/workflows/ci.yml`** - Runs on every PR:
+
 - Matrix: `ubuntu-latest`, `macos-latest`, `windows-latest`
 - Steps: build, lint, test for each language
 - Caches: Cargo registry, Go modules, npm, pip
 
 **`.github/workflows/release.yml`** - Runs on tags:
+
 - Build release artifacts for all platforms
 - Publish to crates.io, PyPI, npm
 - Create GitHub release with binaries
@@ -460,7 +470,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        rust: [stable, "1.70"]  # MSRV
+        rust: [stable, "1.70"] # MSRV
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -536,6 +546,7 @@ make test-parallel
 ### Test Isolation
 
 Tests should be isolated and not depend on:
+
 - Network access (mock external services)
 - Specific file paths (use temp directories)
 - System state (clean up after tests)

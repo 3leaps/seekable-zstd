@@ -3,6 +3,7 @@
 > Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) portable testing practices.
 
 This document establishes testing standards for seekable-zstd, with emphasis on:
+
 - Portable, deterministic tests
 - Shared test fixtures across language bindings
 - Fixture generation for reproducibility
@@ -15,11 +16,13 @@ This document establishes testing standards for seekable-zstd, with emphasis on:
 ### Deterministic Execution
 
 Tests must produce identical results across:
+
 - Developer laptops (macOS, Linux, Windows)
 - CI environments (GitHub Actions)
 - Sandboxed environments (containers)
 
 **Requirements:**
+
 - No hard-coded ports (use ephemeral port allocation)
 - Seed all randomness explicitly
 - No undeclared timeouts
@@ -52,6 +55,7 @@ def require_multithread():
 ### Isolated Cleanup
 
 Register cleanup handlers to tear down resources:
+
 - Temp directories
 - Open file handles
 - Thread pools
@@ -62,11 +66,11 @@ Register cleanup handlers to tear down resources:
 
 ### Fixture Categories
 
-| Category | Size | Storage | Generation |
-|----------|------|---------|------------|
-| Small | <100KB | In-repo | Pre-generated, committed |
-| Medium | 100KB-10MB | In-repo (LFS optional) | Script-generated, committed |
-| Large | >10MB | Generated | Script-generated, not committed |
+| Category | Size       | Storage                | Generation                      |
+| -------- | ---------- | ---------------------- | ------------------------------- |
+| Small    | <100KB     | In-repo                | Pre-generated, committed        |
+| Medium   | 100KB-10MB | In-repo (LFS optional) | Script-generated, committed     |
+| Large    | >10MB      | Generated              | Script-generated, not committed |
 
 ### Small Fixtures (Committed)
 
@@ -439,7 +443,7 @@ jobs:
 
       - name: Test parallel speedup
         run: cargo test parallel_shows_speedup -- --nocapture
-        if: runner.os != 'Windows'  # Windows runners may be single-core
+        if: runner.os != 'Windows' # Windows runners may be single-core
 ```
 
 ---
@@ -492,4 +496,4 @@ fn fixtures_match_expected_checksums() {
 
 ---
 
-*Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) portable testing practices.*
+_Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) portable testing practices._

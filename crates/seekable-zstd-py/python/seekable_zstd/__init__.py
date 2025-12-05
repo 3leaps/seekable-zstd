@@ -1,5 +1,6 @@
+from importlib.metadata import PackageNotFoundError, version
+
 from .seekable_zstd import Reader
-from importlib.metadata import version, PackageNotFoundError
 
 try:
     __version__ = version("seekable-zstd")

@@ -8,16 +8,16 @@
 
 ### Known Interface Adapters
 
-| Interface | Definition File | Notes |
-|-----------|-----------------|-------|
-| Claude Code | `AGENTS.md` (this file) | Anthropic CLI, primary interface |
-| OpenCode | `AGENTS.md` (this file) | Open-source terminal interface |
-| Kilo Code | `AGENTS.md` (this file) | VS Code extension |
-| Cline | `.cline/rules/` → references this file | VS Code extension |
-| Cursor | `AGENTS.md` (this file) | IDE with AI integration |
-| Windsurf | `AGENTS.md` (this file) | Codeium IDE |
-| Aider | `AGENTS.md` (this file) | Terminal-based pair programming |
-| Continue | `AGENTS.md` (this file) | IDE extension |
+| Interface   | Definition File                        | Notes                            |
+| ----------- | -------------------------------------- | -------------------------------- |
+| Claude Code | `AGENTS.md` (this file)                | Anthropic CLI, primary interface |
+| OpenCode    | `AGENTS.md` (this file)                | Open-source terminal interface   |
+| Kilo Code   | `AGENTS.md` (this file)                | VS Code extension                |
+| Cline       | `.cline/rules/` → references this file | VS Code extension                |
+| Cursor      | `AGENTS.md` (this file)                | IDE with AI integration          |
+| Windsurf    | `AGENTS.md` (this file)                | Codeium IDE                      |
+| Aider       | `AGENTS.md` (this file)                | Terminal-based pair programming  |
+| Continue    | `AGENTS.md` (this file)                | IDE extension                    |
 
 **Project**: seekable-zstd
 **Purpose**: Seekable zstd compression with parallel decompression
@@ -36,6 +36,7 @@ Before making changes, read these documents in order:
 4. **[docs/standards/testing.md](docs/standards/testing.md)** - Test fixtures, parallel verification
 
 Language-specific (as needed):
+
 - **[docs/standards/coding/rust.md](docs/standards/coding/rust.md)** - Rust core library
 - **[docs/standards/coding/go.md](docs/standards/coding/go.md)** - Go CGO bindings
 - **[docs/standards/coding/python.md](docs/standards/coding/python.md)** - Python PyO3 bindings
@@ -176,12 +177,12 @@ Co-Authored-By: <interface> <model> <noreply@3leaps.net>
 
 ### Attribution Components
 
-| Component | Description | Examples |
-|-----------|-------------|----------|
-| **model** | The AI model used | `claude-sonnet-4-20250514`, `claude-opus-4-20250514`, `gpt-4o`, `claude-3.5-sonnet` |
-| **interface** | The agentic interface | `Claude Code`, `OpenCode`, `Kilo Code`, `Cline`, `Cursor`, `Aider` |
-| **human** | Supervising maintainer | GitHub handle (e.g., `@3leapsdave`) |
-| **email** | Co-author email | Always `noreply@3leaps.net` (unified for all providers) |
+| Component     | Description            | Examples                                                                            |
+| ------------- | ---------------------- | ----------------------------------------------------------------------------------- |
+| **model**     | The AI model used      | `claude-sonnet-4-20250514`, `claude-opus-4-20250514`, `gpt-4o`, `claude-3.5-sonnet` |
+| **interface** | The agentic interface  | `Claude Code`, `OpenCode`, `Kilo Code`, `Cline`, `Cursor`, `Aider`                  |
+| **human**     | Supervising maintainer | GitHub handle (e.g., `@3leapsdave`)                                                 |
+| **email**     | Co-author email        | Always `noreply@3leaps.net` (unified for all providers)                             |
 
 ### Examples
 
@@ -288,6 +289,7 @@ git clean -fd           # ❌ Without approval - deletes untracked files
 ### Commit Requirements
 
 Commits are allowed only when:
+
 1. **Quality gates pass**: `make quality` and `make test` succeed
 2. **Process compliance**: Any audit/review requirements are satisfied
 3. **Attribution included**: Proper commit message format with attribution
@@ -322,6 +324,7 @@ Push operations are reserved for release boundaries or explicit milestones:
 ### Parallel Verification
 
 Tests must demonstrate:
+
 1. **Correctness**: Parallel results match sequential
 2. **Speedup**: Measurable improvement (expect 2x+ on 4 cores)
 3. **Cross-language**: All bindings produce identical output for same input
@@ -374,4 +377,4 @@ Tests must demonstrate:
 **Last Updated**: 2025-12-01
 **Status**: Bootstrap phase
 
-*This guide is for AI developers working on seekable-zstd. For human contributors, see CONTRIBUTING.md (when available).*
+_This guide is for AI developers working on seekable-zstd. For human contributors, see CONTRIBUTING.md (when available)._

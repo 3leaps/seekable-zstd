@@ -7,13 +7,17 @@ A single version number (defined in the `VERSION` file at the root) is synchroni
 ## How to Check the Version
 
 ### CLI
+
 Check the root `VERSION` file:
+
 ```bash
 cat VERSION
 ```
 
 ### Go
+
 The library exposes a `Version()` function:
+
 ```go
 import seekable "github.com/3leaps/seekable-zstd/bindings/go"
 
@@ -21,20 +25,25 @@ fmt.Println(seekable.Version())
 ```
 
 ### Python
+
 Use the standard `__version__` attribute:
+
 ```python
 import seekable_zstd
 print(seekable_zstd.__version__)
 ```
 
 ### Node.js / TypeScript
+
 Read the version from the package manifest:
+
 ```javascript
-const version = require('seekable-zstd/package.json').version;
+const version = require("seekable-zstd/package.json").version;
 console.log(version);
 ```
 
 ### Rust
+
 Use the standard Cargo version environment variable (compile-time) or inspect `Cargo.toml`.
 
 ## Release Process
@@ -48,6 +57,7 @@ make bump-major  # 0.1.0 -> 1.0.0
 ```
 
 This updates:
+
 - `VERSION` file
 - `crates/seekable-zstd-core/Cargo.toml`
 - `crates/seekable-zstd-py/Cargo.toml` & `pyproject.toml`

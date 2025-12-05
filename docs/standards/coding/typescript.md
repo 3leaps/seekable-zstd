@@ -79,7 +79,7 @@ bindings/nodejs/
 
 ### 3.1 Reader Class
 
-```typescript
+````typescript
 /**
  * Random access reader for seekable zstd archives.
  *
@@ -124,7 +124,7 @@ export class Reader {
   /** Releases resources. Safe to call multiple times. */
   close(): void;
 }
-```
+````
 
 ### 3.2 Use `bigint` for Large Values
 
@@ -313,7 +313,7 @@ export class Reader {
 
 ### 8.1 JSDoc Comments
 
-```typescript
+````typescript
 /**
  * Reads multiple byte ranges in parallel.
  *
@@ -337,7 +337,7 @@ export class Reader {
  * ```
  */
 readRanges(ranges: Array<[bigint, bigint]>): Buffer[];
-```
+````
 
 ---
 
@@ -356,4 +356,4 @@ readRanges(ranges: Array<[bigint, bigint]>): Buffer[];
 
 ---
 
-*Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) TypeScript standards.*
+_Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) TypeScript standards._

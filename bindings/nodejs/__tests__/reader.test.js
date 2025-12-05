@@ -1,13 +1,13 @@
 const test = require('ava');
 const { Reader } = require('../index.js');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const fixturePath = path.resolve(__dirname, '../../../tests/fixtures/hello.szst');
 
-test('opens valid archive', t => {
+test('opens valid archive', (t) => {
   if (!fs.existsSync(fixturePath)) {
-    t.fail('Fixture not found at ' + fixturePath);
+    t.fail(`Fixture not found at ${fixturePath}`);
     return;
   }
   const reader = new Reader(fixturePath);
@@ -15,9 +15,9 @@ test('opens valid archive', t => {
   t.true(reader.frameCount >= 1);
 });
 
-test('reads range correctly', t => {
+test('reads range correctly', (t) => {
   if (!fs.existsSync(fixturePath)) {
-    t.fail('Fixture not found at ' + fixturePath);
+    t.fail(`Fixture not found at ${fixturePath}`);
     return;
   }
   const reader = new Reader(fixturePath);
@@ -28,9 +28,9 @@ test('reads range correctly', t => {
   t.is(data2.toString(), 'World');
 });
 
-test('reads range async correctly', async t => {
+test('reads range async correctly', async (t) => {
   if (!fs.existsSync(fixturePath)) {
-    t.fail('Fixture not found at ' + fixturePath);
+    t.fail(`Fixture not found at ${fixturePath}`);
     return;
   }
   const reader = new Reader(fixturePath);

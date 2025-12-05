@@ -21,10 +21,10 @@ Agentic attribution enables:
 
 Unlike complex attribution systems with unique agent identities, personas, and emojis, this standard focuses on **two key dimensions**:
 
-| Dimension | What it captures | Why it matters |
-|-----------|-----------------|----------------|
-| **Model** | The AI model (e.g., `claude-sonnet-4-20250514`) | Different models have different capabilities/quirks |
-| **Interface** | The tool used (e.g., `Claude Code`, `Cursor`) | Interface affects prompting, context, tool access |
+| Dimension     | What it captures                                | Why it matters                                      |
+| ------------- | ----------------------------------------------- | --------------------------------------------------- |
+| **Model**     | The AI model (e.g., `claude-sonnet-4-20250514`) | Different models have different capabilities/quirks |
+| **Interface** | The tool used (e.g., `Claude Code`, `Cursor`)   | Interface affects prompting, context, tool access   |
 
 This is sufficient for debugging and analysis without requiring identity infrastructure.
 
@@ -51,15 +51,15 @@ Co-Authored-By: <interface> <model> <noreply@3leaps.net>
 
 #### Type (conventional commit)
 
-| Type | Usage |
-|------|-------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `docs` | Documentation |
-| `test` | Tests |
-| `refactor` | Code refactoring |
-| `perf` | Performance improvement |
-| `chore` | Maintenance |
+| Type       | Usage                   |
+| ---------- | ----------------------- |
+| `feat`     | New feature             |
+| `fix`      | Bug fix                 |
+| `docs`     | Documentation           |
+| `test`     | Tests                   |
+| `refactor` | Code refactoring        |
+| `perf`     | Performance improvement |
+| `chore`    | Maintenance             |
 
 #### Scope (optional)
 
@@ -69,28 +69,28 @@ Component affected: `core`, `go`, `python`, `nodejs`, `ffi`, `docs`
 
 Use the exact model identifier when known:
 
-| Provider | Format | Examples |
-|----------|--------|----------|
+| Provider  | Format                       | Examples                                             |
+| --------- | ---------------------------- | ---------------------------------------------------- |
 | Anthropic | `claude-{variant}-{version}` | `claude-sonnet-4-20250514`, `claude-opus-4-20250514` |
-| OpenAI | `gpt-{version}` | `gpt-4o`, `gpt-4-turbo` |
-| Other | Provider's identifier | `gemini-pro`, `llama-3-70b` |
+| OpenAI    | `gpt-{version}`              | `gpt-4o`, `gpt-4-turbo`                              |
+| Other     | Provider's identifier        | `gemini-pro`, `llama-3-70b`                          |
 
 If exact version unknown, use the general model name (e.g., `claude-3.5-sonnet`).
 
 #### Interface Identifier
 
-| Interface | Identifier | Notes |
-|-----------|------------|-------|
-| Claude Code | `Claude Code` | Anthropic CLI |
-| OpenCode | `OpenCode` | Open-source terminal interface |
-| Kilo Code | `Kilo Code` | VS Code extension |
-| Cline | `Cline` | VS Code extension |
-| Cursor | `Cursor` | IDE with AI integration |
-| Aider | `Aider` | Terminal-based pair programming |
-| Windsurf | `Windsurf` | Codeium IDE |
-| Continue | `Continue` | IDE extension |
-| GitHub Copilot | `GitHub Copilot` | GitHub's AI assistant |
-| Custom/API | `API` or specific tool name | Direct API usage |
+| Interface      | Identifier                  | Notes                           |
+| -------------- | --------------------------- | ------------------------------- |
+| Claude Code    | `Claude Code`               | Anthropic CLI                   |
+| OpenCode       | `OpenCode`                  | Open-source terminal interface  |
+| Kilo Code      | `Kilo Code`                 | VS Code extension               |
+| Cline          | `Cline`                     | VS Code extension               |
+| Cursor         | `Cursor`                    | IDE with AI integration         |
+| Aider          | `Aider`                     | Terminal-based pair programming |
+| Windsurf       | `Windsurf`                  | Codeium IDE                     |
+| Continue       | `Continue`                  | IDE extension                   |
+| GitHub Copilot | `GitHub Copilot`            | GitHub's AI assistant           |
+| Custom/API     | `API` or specific tool name | Direct API usage                |
 
 #### Human Supervisor
 
@@ -101,6 +101,7 @@ GitHub handle of the supervising maintainer: `@username`
 **Always use**: `noreply@3leaps.net`
 
 This unified email domain:
+
 - Avoids spamming provider noreply addresses (anthropic.com, openai.com)
 - Provides consistent attribution across all AI providers
 - Routes any accidental emails to a controlled destination
@@ -227,16 +228,17 @@ Before committing, verify attribution includes:
 
 ## Comparison with Complex Attribution
 
-| Aspect | Complex (FulmenHQ) | Simple (seekable-zstd) |
-|--------|-------------------|------------------------|
-| Agent identity | Named personas with emojis | Model + Interface only |
-| Email domain | `noreply@3leaps.net` | `noreply@3leaps.net` (same) |
-| MAINTAINERS.md | Required agent definitions | Not required |
-| Mattermost handles | Required for communication | Not applicable |
-| Committer-of-Record | Separate trailer | Supervisor line |
-| Quality indicators | Emojis (📊, 🛡️, ⚡) | Optional, plain text |
+| Aspect              | Complex (FulmenHQ)         | Simple (seekable-zstd)      |
+| ------------------- | -------------------------- | --------------------------- |
+| Agent identity      | Named personas with emojis | Model + Interface only      |
+| Email domain        | `noreply@3leaps.net`       | `noreply@3leaps.net` (same) |
+| MAINTAINERS.md      | Required agent definitions | Not required                |
+| Mattermost handles  | Required for communication | Not applicable              |
+| Committer-of-Record | Separate trailer           | Supervisor line             |
+| Quality indicators  | Emojis (📊, 🛡️, ⚡)        | Optional, plain text        |
 
 The simple format is sufficient for community libraries where:
+
 - Contributors use various AI tools
 - No centralized agent infrastructure exists
 - Traceability by model/interface is adequate
@@ -269,4 +271,4 @@ The simple format is sufficient for community libraries where:
 
 ---
 
-*Simplified from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) agentic attribution standard.*
+_Simplified from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) agentic attribution standard._

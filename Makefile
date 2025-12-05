@@ -21,20 +21,31 @@ quality: format-check lint test-fast
 format:
 	cargo fmt
 	cd bindings/go && go fmt ./...
+	# Python formatting with ruff (via uvx)
+	uvx ruff format crates/seekable-zstd-py
+	# TypeScript/JavaScript formatting with biome
+	cd bindings/nodejs && npx @biomejs/biome format --write .
 
 .PHONY: format-check
 format-check:
 	cargo fmt -- --check
 	# Check if go fmt would make changes
 	@if [ -n "$$(cd bindings/go && go fmt ./...)" ]; then echo "Go code needs formatting"; exit 1; fi
+	# Check Python formatting with ruff (via uvx)
+	uvx ruff format --check crates/seekable-zstd-py
+	# Check TypeScript/JavaScript formatting with biome (no write)
+	cd bindings/nodejs && npx @biomejs/biome check --javascript-linter-enabled=false .
+	$(MAKE) format-check-md
 
 .PHONY: lint
 lint:
 	cargo clippy -- -D warnings
 	cd bindings/go && go vet ./...
-	# Check Python linting (if ruff is installed)
-	if command -v ruff >/dev/null; then ruff check crates/seekable-zstd-py; fi
-	# Check Node.js (if npm is installed)
+	# Python linting with ruff (via uvx)
+	uvx ruff check crates/seekable-zstd-py
+	# TypeScript/JavaScript linting with biome
+	cd bindings/nodejs && npx @biomejs/biome lint .
+	# Check Node.js build (if npm is installed)
 	if command -v npm >/dev/null && [ -d bindings/nodejs/node_modules ]; then \
 		cd bindings/nodejs && npm run build; \
 	fi
@@ -42,6 +53,20 @@ lint:
 .PHONY: test-fast
 test-fast:
 	cargo test --lib
+
+.PHONY: precommit
+precommit: quality
+
+.PHONY: prepush
+prepush: quality test
+
+.PHONY: format-md
+format-md:
+	npx prettier --write "**/*.{md,json,yaml,yml}"
+
+.PHONY: format-check-md
+format-check-md:
+	npx prettier --check "**/*.{md,json,yaml,yml}"
 
 .PHONY: test
 test: test-rust test-go test-python test-node

@@ -11,7 +11,7 @@ npm install seekable-zstd
 ## Usage
 
 ```javascript
-const { Reader } = require('seekable-zstd');
+const { Reader } = require("seekable-zstd");
 
 const reader = new Reader("archive.szst");
 try {

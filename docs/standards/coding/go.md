@@ -252,4 +252,4 @@ package seekable
 
 ---
 
-*Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) Go standards.*
+_Adapted from [FulmenHQ Crucible](https://github.com/fulmenhq/crucible) Go standards._

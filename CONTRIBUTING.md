@@ -10,6 +10,7 @@ Thank you for your interest in contributing to `seekable-zstd`!
 
 2.  **Environment Setup**:
     Run `make bootstrap` to install required tools and hooks:
+
     ```bash
     make bootstrap
     ```

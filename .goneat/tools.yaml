@@ -14,115 +14,115 @@
 # See schema: schemas/tools/tools.v1.0.0.json
 
 scopes:
-    all:
-        description: All tools from all scopes
-        tools:
-            - ripgrep
-            - jq
-            - yq
-            - yamlfmt
-            - prettier
-            - gitleaks
-    foundation:
-        description: Core foundation tools required for goneat and basic AI agent operation
-        tools:
-            - ripgrep
-            - jq
-            - yq
-            - yamlfmt
-            - prettier
-    security:
-        description: Security scanning tools
-        tools:
-            - gitleaks
+  all:
+    description: All tools from all scopes
+    tools:
+      - ripgrep
+      - jq
+      - yq
+      - yamlfmt
+      - prettier
+      - gitleaks
+  foundation:
+    description: Core foundation tools required for goneat and basic AI agent operation
+    tools:
+      - ripgrep
+      - jq
+      - yq
+      - yamlfmt
+      - prettier
+  security:
+    description: Security scanning tools
+    tools:
+      - gitleaks
 tools:
-    gitleaks:
-        name: gitleaks
-        description: Git secrets scanner
-        kind: go
-        detect_command: gitleaks version
-        install_package: github.com/zricethezav/gitleaks/v8@latest
-        version_args:
-            - version
-        check_args:
-            - help
-        installer_priority:
-            all:
-                - go-install
-    jq:
-        name: jq
-        description: JSON processor - used in CI/CD scripts
-        kind: system
-        detect_command: jq --version
-        platforms:
-            - darwin
-            - linux
-            - windows
-        installer_priority:
-            darwin:
-                - brew
-            linux:
-                - brew
-            windows:
-                - scoop
-                - winget
-    prettier:
-        name: prettier
-        description: Opinionated code formatter
-        kind: node
-        detect_command: prettier --version
-        installer_priority:
-            darwin:
-                - brew
-            linux:
-                - brew
-            windows:
-                - scoop
-                - npm
-    ripgrep:
-        name: ripgrep
-        description: Fast text search - used by goneat for license auditing
-        kind: system
-        detect_command: rg --version
-        platforms:
-            - darwin
-            - linux
-            - windows
-        installer_priority:
-            darwin:
-                - brew
-            linux:
-                - brew
-            windows:
-                - scoop
-                - winget
-    yamlfmt:
-        name: yamlfmt
-        description: YAML formatter and linter
-        kind: go
-        detect_command: yamlfmt --version
-        install_package: github.com/google/yamlfmt/cmd/yamlfmt@latest
-        version_args:
-            - --version
-        check_args:
-            - --help
-        installer_priority:
-            all:
-                - go-install
-    yq:
-        name: yq
-        description: YAML processor
-        kind: system
-        detect_command: yq --version
-        platforms:
-            - darwin
-            - linux
-            - windows
-        installer_priority:
-            darwin:
-                - brew
-            linux:
-                - brew
-            windows:
-                - scoop
-                - winget
+  gitleaks:
+    name: gitleaks
+    description: Git secrets scanner
+    kind: go
+    detect_command: gitleaks version
+    install_package: github.com/zricethezav/gitleaks/v8@latest
+    version_args:
+      - version
+    check_args:
+      - help
+    installer_priority:
+      all:
+        - go-install
+  jq:
+    name: jq
+    description: JSON processor - used in CI/CD scripts
+    kind: system
+    detect_command: jq --version
+    platforms:
+      - darwin
+      - linux
+      - windows
+    installer_priority:
+      darwin:
+        - brew
+      linux:
+        - brew
+      windows:
+        - scoop
+        - winget
+  prettier:
+    name: prettier
+    description: Opinionated code formatter
+    kind: node
+    detect_command: prettier --version
+    installer_priority:
+      darwin:
+        - brew
+      linux:
+        - brew
+      windows:
+        - scoop
+        - npm
+  ripgrep:
+    name: ripgrep
+    description: Fast text search - used by goneat for license auditing
+    kind: system
+    detect_command: rg --version
+    platforms:
+      - darwin
+      - linux
+      - windows
+    installer_priority:
+      darwin:
+        - brew
+      linux:
+        - brew
+      windows:
+        - scoop
+        - winget
+  yamlfmt:
+    name: yamlfmt
+    description: YAML formatter and linter
+    kind: go
+    detect_command: yamlfmt --version
+    install_package: github.com/google/yamlfmt/cmd/yamlfmt@latest
+    version_args:
+      - --version
+    check_args:
+      - --help
+    installer_priority:
+      all:
+        - go-install
+  yq:
+    name: yq
+    description: YAML processor
+    kind: system
+    detect_command: yq --version
+    platforms:
+      - darwin
+      - linux
+      - windows
+    installer_priority:
+      darwin:
+        - brew
+      linux:
+        - brew
+      windows:
+        - scoop
+        - winget

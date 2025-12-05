@@ -1,12 +1,13 @@
 # seekable-zstd
 
-Seekable zstd compression with parallel decompression support.
+Seekable zstd: random access reads and parallel decompression.
 
 ## Why Seekable Compression?
 
 Standard compression formats like gzip and zstd produce opaque blobs - to read byte 1,000,000, you must decompress everything before it. This is problematic for large files processed by parallel workers:
 
 **The Problem:**
+
 - Log files compressed to save storage can't be efficiently searched
 - Index files must be fully decompressed before querying
 - Parallel processing pipelines serialize on decompression
@@ -14,27 +15,25 @@ Standard compression formats like gzip and zstd produce opaque blobs - to read b
 
 **The Solution:**
 Seekable zstd divides data into independently-compressed frames with a seek table. This enables:
+
 - **Random access**: Jump directly to any byte offset
 - **Parallel decompression**: Multiple workers process different ranges simultaneously
 - **Reduced I/O**: Fetch only the frames containing your data
 
 **Use Cases:**
+
 - Distributed log processing (each worker handles a byte range)
 - Compressed index files with random lookups
 - Large dataset sharding without pre-splitting
 - Streaming partial results from compressed archives
-
-## Overview
-
-This library wraps the [seekable zstd format](https://github.com/facebook/zstd/tree/dev/contrib/seekable_format) with ergonomic APIs for multiple languages.
-
-**Features:**
+  \n## Overview\n\nseekable-zstd implements the seekable zstd format with Rust core and bindings for Go, Python, Node.js. It enables direct byte-range access to compressed data and concurrent decompression across ranges, supporting efficient parallel processing of large files like logs and indexes without full sequential decompression.\n\nThis library wraps the [seekable zstd format](https://github.com/facebook/zstd/tree/dev/contrib/seekable_format) with ergonomic APIs for multiple languages.\n\n**Features:**
 - Compress data in independently-accessible frames
 - Read any byte range without decompressing the entire file
 - Decompress multiple ranges concurrently via rayon
 - Consistent API across Rust, Go, Python, and TypeScript
 
 **Language Support:**
+
 - Rust (native)
 - Go (CGO)
 - Python (PyO3)
@@ -157,6 +156,7 @@ make clean          # Remove build artifacts
 ```
 
 **Why Makefile?** This project spans multiple languages (Rust, Go, Python, TypeScript). Make provides:
+
 - Unified interface across all toolchains
 - Correct dependency ordering (e.g., Rust must build before Go CGO)
 - Consistent behavior in CI and local development
@@ -170,6 +170,7 @@ This project uses [Semantic Versioning](https://semver.org/):
 - **PATCH**: Bug fixes, backward compatible
 
 Versions are synchronized across all packages:
+
 - `Cargo.toml` (Rust workspace)
 - `pyproject.toml` (Python)
 - `package.json` (TypeScript)
@@ -190,6 +191,7 @@ make hooks-install  # Install git hooks
 ```
 
 Hooks run automatically on commit:
+
 - `rustfmt` - Rust formatting
 - `clippy` - Rust linting
 - `cargo test` - Rust tests
@@ -201,19 +203,18 @@ See [docs/development.md](docs/development.md) for detailed development guide.
 
 For detailed usage instructions and platform-specific details, please refer to the binding guides:
 
-| Language | Guide | Key Features |
-|----------|-------|--------------|
-| **Rust** | [Docs.rs](https://docs.rs/seekable-zstd) | Native implementation, full control |
-| **Go** | [Go Binding Guide](docs/go-binding.md) | CGO setup, static linking, `ReaderAt` |
-| **Node.js** | [Node.js Binding Guide](docs/typescript-binding.md) | napi-rs setup, TypeScript types |
-| **Python** | [README (Quick Start)](#python) | PyO3 bindings (dedicated guide coming soon) |
+| Language    | Guide                                               | Key Features                                |
+| ----------- | --------------------------------------------------- | ------------------------------------------- |
+| **Rust**    | [Docs.rs](https://docs.rs/seekable-zstd)            | Native implementation, full control         |
+| **Go**      | [Go Binding Guide](docs/go-binding.md)              | CGO setup, static linking, `ReaderAt`       |
+| **Node.js** | [Node.js Binding Guide](docs/typescript-binding.md) | napi-rs setup, TypeScript types             |
+| **Python**  | [README (Quick Start)](#python)                     | PyO3 bindings (dedicated guide coming soon) |
 
 ### Developer Resources
 
 - [Development Guide](docs/development.md) - Setup, workflow, hooks
 - [Standards](docs/standards/README.md) - Coding and testing standards
 - [Versioning](docs/versioning.md) - Versioning policy and access guide
-
 
 ## License
 

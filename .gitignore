@@ -1,5 +1,7 @@
 .plans/
 target/
+bindings/go/lib/**/*.a
+**/node_modules
 **/*.rs.bk
 Cargo.lock
 /bin/

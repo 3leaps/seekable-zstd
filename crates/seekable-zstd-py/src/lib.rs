@@ -16,10 +16,12 @@ impl Reader {
         Ok(Reader { inner })
     }
 
+    #[getter]
     fn size(&self) -> u64 {
         self.inner.size()
     }
 
+    #[getter]
     fn frame_count(&self) -> u64 {
         self.inner.frame_count()
     }

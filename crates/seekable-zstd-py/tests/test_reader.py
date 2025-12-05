@@ -17,8 +17,8 @@ def test_reader_fixture(tmp_path):
         pytest.skip(f"Fixture not found at {fixture_path}")
 
     reader = Reader(fixture_path)
-    assert reader.size() == 11
-    assert reader.frame_count() >= 1
+    assert reader.size == 11
+    assert reader.frame_count >= 1
 
     data = reader.read_range(0, 5)
     assert data == b"Hello"
@@ -36,6 +36,6 @@ def test_context_manager():
         pytest.skip(f"Fixture not found at {fixture_path}")
 
     with Reader(fixture_path) as reader:
-        assert reader.size() == 11
+        assert reader.size == 11
         data = reader.read_range(0, 5)
         assert data == b"Hello"

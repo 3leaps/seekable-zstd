@@ -102,39 +102,53 @@ bench:
 .PHONY: bump-patch
 bump-patch:
 	@echo "Bumping patch version..."
-	@VERSION=$$(grep '^version' crates/seekable-zstd-core/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/'); \
+	@VERSION=$$(cat VERSION); \
 	MAJOR=$$(echo $$VERSION | cut -d. -f1); \
 	MINOR=$$(echo $$VERSION | cut -d. -f2); \
 	PATCH=$$(echo $$VERSION | cut -d. -f3); \
 	NEW_VERSION="$$MAJOR.$$MINOR.$$((PATCH + 1))"; \
 	echo "$$VERSION -> $$NEW_VERSION"; \
+	echo "$$NEW_VERSION" > VERSION; \
 	$(MAKE) _set-version VERSION=$$NEW_VERSION
 
 .PHONY: bump-minor
 bump-minor:
 	@echo "Bumping minor version..."
-	@VERSION=$$(grep '^version' crates/seekable-zstd-core/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/'); \
+	@VERSION=$$(cat VERSION); \
 	MAJOR=$$(echo $$VERSION | cut -d. -f1); \
 	MINOR=$$(echo $$VERSION | cut -d. -f2); \
 	NEW_VERSION="$$MAJOR.$$((MINOR + 1)).0"; \
 	echo "$$VERSION -> $$NEW_VERSION"; \
+	echo "$$NEW_VERSION" > VERSION; \
 	$(MAKE) _set-version VERSION=$$NEW_VERSION
 
 .PHONY: bump-major
 bump-major:
 	@echo "Bumping major version..."
-	@VERSION=$$(grep '^version' crates/seekable-zstd-core/Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/'); \
+	@VERSION=$$(cat VERSION); \
 	MAJOR=$$(echo $$VERSION | cut -d. -f1); \
 	NEW_VERSION="$$((MAJOR + 1)).0.0"; \
 	echo "$$VERSION -> $$NEW_VERSION"; \
+	echo "$$NEW_VERSION" > VERSION; \
 	$(MAKE) _set-version VERSION=$$NEW_VERSION
 
 .PHONY: _set-version
 _set-version:
 	@if [ -z "$(VERSION)" ]; then echo "VERSION not set"; exit 1; fi
+	# Update Rust crates (using cargo-edit if available would be cleaner, but sed works for now)
+	# macOS sed requires empty string for -i
 	sed -i '' 's/^version = ".*"/version = "$(VERSION)"/' crates/seekable-zstd-core/Cargo.toml
 	sed -i '' 's/^version = ".*"/version = "$(VERSION)"/' crates/seekable-zstd-py/Cargo.toml
 	sed -i '' 's/^version = ".*"/version = "$(VERSION)"/' bindings/nodejs/Cargo.toml
+	
+	# Update Node.js package.json
 	sed -i '' 's/"version": ".*"/"version": "$(VERSION)"/' bindings/nodejs/package.json
+	
+	# Update Python pyproject.toml
 	sed -i '' 's/^version = ".*"/version = "$(VERSION)"/' crates/seekable-zstd-py/pyproject.toml
+	
+	# Update Go binding documentation (Go versioning is via git tags, but docs reference it)
+	# We don't update go.mod version as it tracks the go language version, not package version
+	
 	@echo "Updated all versions to $(VERSION)"
+

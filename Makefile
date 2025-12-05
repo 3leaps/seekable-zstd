@@ -51,7 +51,7 @@ test-go: build-rust-lib
 .PHONY: build-rust-lib
 build-rust-lib:
 	mkdir -p $(LIB_DIR)
-	cargo build --release
+	cargo build --release -p seekable-zstd-core
 	cp target/release/libseekable_zstd_core.a $(LIB_DIR)/libseekable_zstd_core.a
 
 # Hook management

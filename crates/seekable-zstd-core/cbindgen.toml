@@ -1,0 +1,18 @@
+# cbindgen configuration for seekable-zstd FFI
+
+language = "C"
+
+header = """
+#ifndef SEEKABLE_ZSTD_H
+#define SEEKABLE_ZSTD_H
+"""
+
+trailer = """
+#endif  /* SEEKABLE_ZSTD_H */
+"""
+
+[export]
+include = ["SeekableDecoder"]
+
+[defines]
+"feature = ffi" = "SEEKABLE_ZSTD_FFI"

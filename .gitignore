@@ -1,3 +1,4 @@
+.plans/
 target/
 **/*.rs.bk
 Cargo.lock

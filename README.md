@@ -199,9 +199,20 @@ See [docs/development.md](docs/development.md) for detailed development guide.
 
 ## Documentation
 
+For detailed usage instructions and platform-specific details, please refer to the binding guides:
+
+| Language | Guide | Key Features |
+|----------|-------|--------------|
+| **Rust** | [Docs.rs](https://docs.rs/seekable-zstd) | Native implementation, full control |
+| **Go** | [Go Binding Guide](docs/go-binding.md) | CGO setup, static linking, `ReaderAt` |
+| **Node.js** | [Node.js Binding Guide](docs/typescript-binding.md) | napi-rs setup, TypeScript types |
+| **Python** | [README (Quick Start)](#python) | PyO3 bindings (dedicated guide coming soon) |
+
+### Developer Resources
+
 - [Development Guide](docs/development.md) - Setup, workflow, hooks
 - [Standards](docs/standards/README.md) - Coding and testing standards
-- [API Documentation](https://docs.rs/seekable-zstd) - Rust API docs
+
 
 ## License
 

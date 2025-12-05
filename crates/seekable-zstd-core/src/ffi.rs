@@ -1,8 +1,10 @@
 use crate::decoder::Decoder;
+use crate::parallel::ParallelDecoder;
 use std::cell::RefCell;
 use std::ffi::{CStr, CString};
 use std::fs::File;
 use std::os::raw::c_char;
+use std::path::PathBuf;
 use std::ptr;
 
 // Thread-local storage for the last error message
@@ -26,6 +28,7 @@ fn set_error(err: &impl ToString) {
 
 pub struct SeekableDecoder {
     inner: Decoder<'static, File>,
+    path: PathBuf,
 }
 
 /// Opens a seekable zstd archive.
@@ -67,7 +70,10 @@ pub unsafe extern "C" fn seekable_open(path: *const c_char) -> *mut SeekableDeco
         }
     };
 
-    let boxed = Box::new(SeekableDecoder { inner: decoder });
+    let boxed = Box::new(SeekableDecoder {
+        inner: decoder,
+        path: PathBuf::from(path_str),
+    });
     Box::into_raw(boxed)
 }
 
@@ -151,6 +157,95 @@ pub unsafe extern "C" fn seekable_read_range(
     unsafe {
         ptr::copy_nonoverlapping(data.as_ptr(), out_data, data.len());
         *out_len = data.len();
+    }
+
+    0 // Success
+}
+
+/// Reads multiple ranges in parallel.
+///
+/// # Safety
+/// `decoder` must be a valid pointer returned by `seekable_open`.
+/// `starts` and `ends` must point to arrays of `count` u64 values.
+/// `out_buffers` must point to an array of `count` buffer pointers.
+/// `out_lengths` must point to an array of `count` size_t values.
+/// Each `out_buffers[i]` must point to a buffer of at least `out_lengths[i]` bytes.
+/// On success, `out_lengths[i]` is updated to the actual bytes written.
+#[no_mangle]
+pub unsafe extern "C" fn seekable_read_ranges(
+    decoder: *const SeekableDecoder,
+    starts: *const u64,
+    ends: *const u64,
+    count: usize,
+    out_buffers: *mut *mut u8,
+    out_lengths: *mut usize,
+) -> i32 {
+    if decoder.is_null() {
+        set_error(&"Decoder pointer is null");
+        return -1;
+    }
+    if count == 0 {
+        return 0; // Nothing to do
+    }
+    if starts.is_null() || ends.is_null() {
+        set_error(&"Range array pointer is null");
+        return -1;
+    }
+    if out_buffers.is_null() || out_lengths.is_null() {
+        set_error(&"Output array pointer is null");
+        return -1;
+    }
+
+    let decoder = unsafe { &*decoder };
+
+    // Build ranges vector
+    let starts_slice = unsafe { std::slice::from_raw_parts(starts, count) };
+    let ends_slice = unsafe { std::slice::from_raw_parts(ends, count) };
+    let ranges: Vec<(u64, u64)> = starts_slice
+        .iter()
+        .zip(ends_slice.iter())
+        .map(|(&s, &e)| (s, e))
+        .collect();
+
+    // Verify buffer sizes
+    let lengths_slice = unsafe { std::slice::from_raw_parts(out_lengths, count) };
+    for (i, ((start, end), &cap)) in ranges.iter().zip(lengths_slice.iter()).enumerate() {
+        let needed = (end - start) as usize;
+        if cap < needed {
+            set_error(&format!(
+                "Buffer {} too small: provided {}, required {}",
+                i, cap, needed
+            ));
+            return -2;
+        }
+    }
+
+    // Use ParallelDecoder for parallel reads
+    let parallel = match ParallelDecoder::open(&decoder.path) {
+        Ok(p) => p,
+        Err(e) => {
+            set_error(&format!("Failed to create parallel decoder: {e}"));
+            return -3;
+        }
+    };
+
+    let results = match parallel.read_ranges(&ranges) {
+        Ok(r) => r,
+        Err(e) => {
+            set_error(&format!("Parallel read error: {e}"));
+            return -3;
+        }
+    };
+
+    // Copy results to output buffers
+    let out_buffers_slice = unsafe { std::slice::from_raw_parts_mut(out_buffers, count) };
+    let out_lengths_slice = unsafe { std::slice::from_raw_parts_mut(out_lengths, count) };
+
+    for (i, data) in results.iter().enumerate() {
+        unsafe {
+            ptr::copy_nonoverlapping(data.as_ptr(), out_buffers_slice[i], data.len());
+            out_lengths_slice[i] = data.len();
+        }
     }
 
     0 // Success

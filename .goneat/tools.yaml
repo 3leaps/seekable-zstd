@@ -12,7 +12,6 @@
 #
 # Validate changes with: goneat doctor tools validate
 # See schema: schemas/tools/tools.v1.0.0.json
-
 scopes:
   all:
     description: All tools from all scopes
@@ -23,6 +22,10 @@ scopes:
       - yamlfmt
       - prettier
       - gitleaks
+      - syft
+      - go
+      - uv
+      - act
   foundation:
     description: Core foundation tools required for goneat and basic AI agent operation
     tools:
@@ -31,11 +34,40 @@ scopes:
       - yq
       - yamlfmt
       - prettier
+  languages:
+    description: Language toolchains for multi-language project
+    tools:
+      - go
+      - uv
+  cicd:
+    description: CI/CD testing tools
+    tools:
+      - act
+  sbom:
+    description: Software Bill of Materials (SBOM) generation tools
+    tools:
+      - syft
   security:
     description: Security scanning tools
     tools:
       - gitleaks
 tools:
+  act:
+    name: act
+    description: Run GitHub Actions locally
+    kind: system
+    detect_command: act --version
+    platforms:
+      - darwin
+      - linux
+      - windows
+    installer_priority:
+      darwin:
+        - brew
+      linux:
+        - brew
+      windows:
+        - scoop
   gitleaks:
     name: gitleaks
     description: Git secrets scanner
@@ -49,6 +81,26 @@ tools:
     installer_priority:
       all:
         - go-install
+  go:
+    name: go
+    description: Go toolchain - required for Go bindings
+    kind: system
+    detect_command: go version
+    platforms:
+      - darwin
+      - linux
+      - windows
+    installer_priority:
+      darwin:
+        - brew
+      linux:
+        - brew
+      windows:
+        - scoop
+        - winget
+    version_scheme: semver
+    minimum_version: 1.21.0
+    recommended_version: 1.22.0
   jq:
     name: jq
     description: JSON processor - used in CI/CD scripts
@@ -77,7 +129,7 @@ tools:
       linux:
         - brew
       windows:
-        - scoop
+        - bun
         - npm
   ripgrep:
     name: ripgrep
@@ -96,6 +148,26 @@ tools:
       windows:
         - scoop
         - winget
+  syft:
+    name: syft
+    description: SBOM generator for software supply chain security
+    kind: system
+    detect_command: syft version
+    version_args:
+      - version
+    check_args:
+      - --help
+    platforms:
+      - darwin
+      - linux
+      - windows
+    installer_priority:
+      darwin:
+        - brew
+      linux:
+        - brew
+      windows:
+        - scoop
   yamlfmt:
     name: yamlfmt
     description: YAML formatter and linter
@@ -109,6 +181,22 @@ tools:
     installer_priority:
       all:
         - go-install
+  uv:
+    name: uv
+    description: Fast Python package installer and resolver
+    kind: system
+    detect_command: uv --version
+    platforms:
+      - darwin
+      - linux
+      - windows
+    installer_priority:
+      darwin:
+        - brew
+      linux:
+        - brew
+      windows:
+        - scoop
   yq:
     name: yq
     description: YAML processor

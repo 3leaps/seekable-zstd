@@ -30,7 +30,7 @@ get_tool_config() {
 
 # Install goneat
 echo "Installing goneat..."
-VERSION="v0.3.10"
+VERSION="v0.3.13"
 URL="https://github.com/fulmenhq/goneat/releases/download/$VERSION/goneat_${VERSION}_${OS}_${ARCH}.tar.gz"
 
 # Checksum verification would go here but skipping for simplicity in bash script

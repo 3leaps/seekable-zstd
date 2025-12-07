@@ -17,6 +17,9 @@ LIB_DIR := bindings/go/lib/$(OS)-$(ARCH)
 .PHONY: quality
 quality: format-check lint test-fast
 
+.PHONY: quality-rust
+quality-rust: format-check-rust lint-rust test-fast
+
 .PHONY: format
 format:
 	cargo fmt
@@ -37,6 +40,10 @@ format-check:
 	cd bindings/nodejs && npx @biomejs/biome check --javascript-linter-enabled=false .
 	$(MAKE) format-check-md
 
+.PHONY: format-check-rust
+format-check-rust:
+	cargo fmt -- --check
+
 .PHONY: lint
 lint:
 	cargo clippy -- -D warnings
@@ -49,6 +56,10 @@ lint:
 	if command -v npm >/dev/null && [ -d bindings/nodejs/node_modules ]; then \
 		cd bindings/nodejs && npm run build; \
 	fi
+
+.PHONY: lint-rust
+lint-rust:
+	cargo clippy -- -D warnings
 
 .PHONY: test-fast
 test-fast:

@@ -66,7 +66,22 @@ endif
 
 PREBUILT_LIB_ROOT := bindings/go/lib
 LOCAL_LIB_ROOT := $(PREBUILT_LIB_ROOT)/local
-LIB_DIR := $(LOCAL_LIB_ROOT)/$(OS)-$(ARCH)
+
+GO_TAGS ?=
+
+GO_TAGS_ARG :=
+ifneq ($(strip $(GO_TAGS)),)
+	GO_TAGS_ARG := -tags "$(GO_TAGS)"
+endif
+
+GO_LIB_SUFFIX :=
+ifneq (,$(findstring musl,$(GO_TAGS)))
+	GO_LIB_SUFFIX := -musl
+endif
+
+RUST_TARGET ?=
+
+LIB_DIR := $(LOCAL_LIB_ROOT)/$(OS)-$(ARCH)$(GO_LIB_SUFFIX)
 
 # Quality gates
 .PHONY: quality
@@ -143,7 +158,19 @@ test-rust:
 
 .PHONY: test-go
 test-go: build-rust-lib
-	cd bindings/go && go test ./...
+	cd bindings/go && CGO_ENABLED=1 go test $(GO_TAGS_ARG) ./...
+
+# Build/test helper for musl-based Linux environments (e.g. Alpine).
+# Note: Go does NOT automatically enable the "musl" tag.
+# Use this target (or pass GO_TAGS=musl) when building in musl containers.
+.PHONY: test-go-musl
+test-go-musl:
+	@if [ "$(OS)" != "linux" ]; then echo "test-go-musl is linux-only"; exit 1; fi
+	@arch="$(ARCH)"; \
+	if [ "$$arch" = "amd64" ]; then rust_target="x86_64-unknown-linux-musl"; \
+	elif [ "$$arch" = "arm64" ]; then rust_target="aarch64-unknown-linux-musl"; \
+	else echo "unsupported ARCH=$$arch"; exit 1; fi; \
+	$(MAKE) test-go GO_TAGS=musl RUST_TARGET="$$rust_target"
 
 .PHONY: test-python
 test-python:
@@ -168,8 +195,13 @@ test-node:
 .PHONY: build-rust-lib
 build-rust-lib:
 	mkdir -p $(LIB_DIR)
-	$(BUILD_RUST_ENV) cargo build --release -p seekable-zstd-core
-	cp target/release/libseekable_zstd_core.a $(LIB_DIR)/libseekable_zstd_core.a
+	@if [ -n "$(RUST_TARGET)" ]; then \
+		$(BUILD_RUST_ENV) cargo build --release --target "$(RUST_TARGET)" -p seekable-zstd-core; \
+		cp "target/$(RUST_TARGET)/release/libseekable_zstd_core.a" "$(LIB_DIR)/libseekable_zstd_core.a"; \
+	else \
+		$(BUILD_RUST_ENV) cargo build --release -p seekable-zstd-core; \
+		cp target/release/libseekable_zstd_core.a "$(LIB_DIR)/libseekable_zstd_core.a"; \
+	fi
 
 # Maintainer convenience: regenerate committed macOS prebuilt libraries.
 # Linux/Windows prebuilt libs are produced in CI via .github/workflows/artifacts.yml.

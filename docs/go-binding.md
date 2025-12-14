@@ -49,4 +49,33 @@ The CGO flags prefer the `local/` directory first, so you can test changes witho
 
 - Go 1.21+
 - Rust 1.70+ (if rebuilding from source)
-- CGO enabled
+- A C toolchain (because this is CGO)
+
+CGO must be enabled (usually the default when a compiler toolchain is present):
+
+```bash
+export CGO_ENABLED=1
+```
+
+## Linux (glibc vs musl)
+
+We ship two Linux flavors of the prebuilt static library:
+
+- `linux-*-*` (glibc, built for compatibility with glibc 2.17+)
+- `linux-*-*-musl` (musl, for Alpine-style environments)
+
+Go does **not** automatically select the `musl` build tag. If you are building in an Alpine/musl container, you must enable it:
+
+```bash
+# Alpine example
+apk add --no-cache build-base
+
+cd bindings/go
+CGO_ENABLED=1 go test -tags musl ./...
+```
+
+Or via the repo Makefile (Linux only):
+
+```bash
+make test-go-musl
+```

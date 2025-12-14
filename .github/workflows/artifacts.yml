@@ -40,13 +40,13 @@ jobs:
       - name: Organize Artifacts
         run: |
           mkdir -p dist/linux-amd64
-          cp target/x86_64-unknown-linux-gnu/release/libseekable_zstd_core.a dist/linux-amd64/
+          cp target/x86_64-unknown-linux-gnu.2.17/release/libseekable_zstd_core.a dist/linux-amd64/
 
           mkdir -p dist/linux-amd64-musl
           cp target/x86_64-unknown-linux-musl/release/libseekable_zstd_core.a dist/linux-amd64-musl/
 
           mkdir -p dist/linux-arm64
-          cp target/aarch64-unknown-linux-gnu/release/libseekable_zstd_core.a dist/linux-arm64/
+          cp target/aarch64-unknown-linux-gnu.2.17/release/libseekable_zstd_core.a dist/linux-arm64/
 
           mkdir -p dist/linux-arm64-musl
           cp target/aarch64-unknown-linux-musl/release/libseekable_zstd_core.a dist/linux-arm64-musl/

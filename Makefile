@@ -1,4 +1,50 @@
-GONEAT := ./bin/goneat
+# Tool installation (user-space bin dir; overridable with BINDIR=...)
+#
+# Defaults:
+# - macOS/Linux: $HOME/.local/bin
+# - Windows (Git Bash / MSYS / MINGW / Cygwin): %USERPROFILE%\\bin (or $HOME/bin)
+BINDIR ?=
+BINDIR_RESOLVE = \
+	BINDIR="$(BINDIR)"; \
+	if [ -z "$$BINDIR" ]; then \
+		OS_RAW="$$(uname -s 2>/dev/null || echo unknown)"; \
+		case "$$OS_RAW" in \
+			MINGW*|MSYS*|CYGWIN*) \
+				if [ -n "$$USERPROFILE" ]; then \
+					if command -v cygpath >/dev/null 2>&1; then \
+						BINDIR="$$(cygpath -u "$$USERPROFILE")/bin"; \
+					else \
+						BINDIR="$$USERPROFILE/bin"; \
+					fi; \
+				elif [ -n "$$HOME" ]; then \
+					BINDIR="$$HOME/bin"; \
+				else \
+					BINDIR="./bin"; \
+				fi ;; \
+			*) \
+				if [ -n "$$HOME" ]; then \
+					BINDIR="$$HOME/.local/bin"; \
+				else \
+					BINDIR="./bin"; \
+				fi ;; \
+		esac; \
+	fi
+
+# Tooling (installed into user-space bindir)
+GONEAT_VERSION ?= v0.3.17
+GONEAT := goneat
+
+SFETCH_RESOLVE = \
+	$(BINDIR_RESOLVE); \
+	SFETCH=""; \
+	if [ -x "$$BINDIR/sfetch" ]; then SFETCH="$$BINDIR/sfetch"; fi; \
+	if [ -z "$$SFETCH" ]; then SFETCH="$$(command -v sfetch 2>/dev/null || true)"; fi
+
+GONEAT_RESOLVE = \
+	$(BINDIR_RESOLVE); \
+	GONEAT_BIN=""; \
+	if [ -x "$$BINDIR/goneat" ]; then GONEAT_BIN="$$BINDIR/goneat"; fi; \
+	if [ -z "$$GONEAT_BIN" ]; then GONEAT_BIN="$$(command -v goneat 2>/dev/null || true)"; fi
 
 OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH := $(shell uname -m)
@@ -92,11 +138,13 @@ test-go: build-rust-lib
 
 .PHONY: test-python
 test-python:
-	# Requires dev dependencies installed via uv or pip
-	if command -v pytest >/dev/null; then \
+	# Prefer uv for consistent virtualenv + lockfile resolution.
+	if command -v uv >/dev/null 2>&1; then \
+		cd crates/seekable-zstd-py && uv sync --dev && uv run maturin develop && uv run pytest; \
+	elif command -v pytest >/dev/null 2>&1; then \
 		cd crates/seekable-zstd-py && maturin develop && pytest; \
 	else \
-		echo "Skipping Python tests (pytest not found)"; \
+		echo "Skipping Python tests (uv/pytest not found)"; \
 	fi
 
 .PHONY: test-node
@@ -117,11 +165,15 @@ build-rust-lib:
 # Hook management
 .PHONY: hooks-generate
 hooks-generate:
-	$(GONEAT) hooks generate
+	@$(GONEAT_RESOLVE); \
+	if [ -z "$$GONEAT_BIN" ]; then echo "❌ goneat not found. Run 'make bootstrap' first."; exit 1; fi; \
+	"$$GONEAT_BIN" hooks generate
 
 .PHONY: hooks-install
 hooks-install: hooks-generate
-	$(GONEAT) hooks install
+	@$(GONEAT_RESOLVE); \
+	if [ -z "$$GONEAT_BIN" ]; then echo "❌ goneat not found. Run 'make bootstrap' first."; exit 1; fi; \
+	"$$GONEAT_BIN" hooks install
 
 .PHONY: hooks-remove
 hooks-remove:
@@ -130,14 +182,37 @@ hooks-remove:
 # Bootstrap
 .PHONY: bootstrap
 bootstrap:
-	./scripts/bootstrap-tools.sh
-	$(MAKE) hooks-install
-	@echo "Checking required tools..."
-	@command -v rustc >/dev/null 2>&1 || (echo "rustc required" && exit 1)
-	@command -v cargo >/dev/null 2>&1 || (echo "cargo required" && exit 1)
-	@command -v go >/dev/null 2>&1 || (echo "go required" && exit 1)
-	rustup component add rustfmt clippy
-	@echo "Bootstrap complete"
+	@set -eu; \
+	$(BINDIR_RESOLVE); mkdir -p "$$BINDIR"; \
+	$(SFETCH_RESOLVE); \
+	if [ -z "$$SFETCH" ]; then \
+		echo "→ Installing sfetch (trust anchor) into $$BINDIR..."; \
+		curl -sSfL https://github.com/3leaps/sfetch/releases/latest/download/install-sfetch.sh | \
+			bash -s -- --yes --dir "$$BINDIR"; \
+		SFETCH="$$BINDIR/sfetch"; \
+	fi; \
+	echo "→ sfetch self-verify (trust anchor):"; \
+	"$$SFETCH" --self-verify; \
+	echo "→ Installing goneat $(GONEAT_VERSION) into $$BINDIR..."; \
+	"$$SFETCH" --repo fulmenhq/goneat --tag $(GONEAT_VERSION) --dest-dir "$$BINDIR"; \
+	OS_RAW="$$(uname -s 2>/dev/null || echo unknown)"; \
+	case "$$OS_RAW" in MINGW*|MSYS*|CYGWIN*) if [ -f "$$BINDIR/goneat.exe" ] && [ ! -f "$$BINDIR/goneat" ]; then mv "$$BINDIR/goneat.exe" "$$BINDIR/goneat"; fi ;; esac; \
+	$(GONEAT_RESOLVE); \
+	if [ -z "$$GONEAT_BIN" ]; then echo "❌ goneat install failed"; exit 1; fi; \
+	echo "→ goneat: $$($$GONEAT_BIN --version 2>&1 | head -n1 || true)"; \
+	echo "→ Installing toolchains via goneat doctor..."; \
+	"$$GONEAT_BIN" doctor tools --scope languages --install --install-package-managers --yes --no-cooling; \
+	"$$GONEAT_BIN" doctor tools --scope foundation --install --install-package-managers --yes --no-cooling; \
+	if [ -z "$${GITHUB_ACTIONS:-}" ]; then \
+		$(MAKE) hooks-install; \
+	else \
+		echo "→ Skipping git hook install in CI"; \
+	fi; \
+	echo "Checking required tools..."; \
+	command -v rustc >/dev/null 2>&1 || (echo "rustc required" && exit 1); \
+	command -v cargo >/dev/null 2>&1 || (echo "cargo required" && exit 1); \
+	rustup component add rustfmt clippy; \
+	echo "✅ Bootstrap complete. Ensure $$BINDIR is on PATH"
 
 # Build targets
 .PHONY: build
@@ -197,6 +272,7 @@ _set-version:
 	@if [ -z "$(VERSION)" ]; then echo "VERSION not set"; exit 1; fi
 	# Update Rust crates (using cargo-edit if available would be cleaner, but sed works for now)
 	# macOS sed requires empty string for -i
+	sed -i '' 's/^version = ".*"/version = "$(VERSION)"/' crates/seekable-zstd/Cargo.toml
 	sed -i '' 's/^version = ".*"/version = "$(VERSION)"/' crates/seekable-zstd-core/Cargo.toml
 	sed -i '' 's/^version = ".*"/version = "$(VERSION)"/' crates/seekable-zstd-py/Cargo.toml
 	sed -i '' 's/^version = ".*"/version = "$(VERSION)"/' bindings/nodejs/Cargo.toml

@@ -13,15 +13,15 @@ jobs:
         rust: [stable, "1.70"]
     steps:
       - uses: actions/checkout@v4
-      - name: Bootstrap goneat
+      - name: Bootstrap tools (sfetch + goneat)
         run: |
           make bootstrap
-          # Add goneat-managed tools to PATH for subsequent steps
-          ./bin/goneat doctor tools env --github >> $GITHUB_PATH
+          # Ensure user-space bin dir is on PATH
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: Install development tools
         run: |
-          # Install Go, Python/uv for full quality checks
-          ./bin/goneat doctor tools --scope languages --install --yes --install-package-managers --yes
+          # Use goneat-configured tools.yaml scopes
+          goneat doctor tools --scope languages --install --yes --install-package-managers --yes
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}

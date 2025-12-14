@@ -127,6 +127,13 @@ lint:
 		cd bindings/nodejs && npm run build; \
 	fi
 
+.PHONY: lint-actions
+lint-actions:
+	@command -v yamllint >/dev/null 2>&1 || (echo "❌ yamllint not found. Run 'make bootstrap' or 'goneat doctor tools --scope foundation --install --yes'" && exit 1)
+	@command -v actionlint >/dev/null 2>&1 || (echo "❌ actionlint not found. Run 'make bootstrap' or 'goneat doctor tools --scope foundation --install --yes'" && exit 1)
+	yamllint .github/workflows/*.yml .goneat/tools.yaml .yamllint
+	actionlint .github/workflows/*.yml
+
 .PHONY: lint-rust
 lint-rust:
 	cargo clippy -- -D warnings

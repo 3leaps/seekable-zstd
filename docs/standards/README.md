@@ -15,4 +15,6 @@ This directory contains standards for seekable-zstd development.
 
 - **[testing.md](testing.md)** - Test fixtures, parallel testing, fixture generation
 
+- **[github-actions.md](github-actions.md)** - GitHub Actions workflow standards
+
 - **[attribution.md](attribution.md)** - AI-assisted commit attribution format

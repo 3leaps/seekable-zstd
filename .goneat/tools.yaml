@@ -20,12 +20,14 @@ scopes:
       - jq
       - yq
       - yamlfmt
+      - yamllint
       - prettier
       - gitleaks
       - syft
       - go
       - uv
       - act
+      - actionlint
   foundation:
     description: Core foundation tools required for goneat and basic AI agent operation
     tools:
@@ -33,7 +35,9 @@ scopes:
       - jq
       - yq
       - yamlfmt
+      - yamllint
       - prettier
+      - actionlint
   languages:
     description: Language toolchains for multi-language project
     tools:
@@ -68,6 +72,20 @@ tools:
         - brew
       windows:
         - scoop
+
+  actionlint:
+    name: actionlint
+    description: GitHub Actions workflow linter
+    kind: go
+    detect_command: actionlint -version
+    install_package: github.com/rhysd/actionlint/cmd/actionlint@latest
+    version_args:
+      - -version
+    check_args:
+      - -h
+    installer_priority:
+      all:
+        - go-install
   gitleaks:
     name: gitleaks
     description: Git secrets scanner
@@ -181,6 +199,22 @@ tools:
     installer_priority:
       all:
         - go-install
+
+  yamllint:
+    name: yamllint
+    description: YAML linter
+    kind: system
+    detect_command: yamllint --version
+    platforms:
+      - darwin
+      - linux
+      - windows
+    installer_priority:
+      all:
+        - manual
+    install_commands:
+      manual: uv tool install yamllint
+
   uv:
     name: uv
     description: Fast Python package installer and resolver

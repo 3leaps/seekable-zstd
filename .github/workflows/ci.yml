@@ -17,7 +17,7 @@ jobs:
         run: |
           make bootstrap
           # Ensure user-space bin dir is on PATH
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Install development tools
         run: |
           # Use goneat-configured tools.yaml scopes

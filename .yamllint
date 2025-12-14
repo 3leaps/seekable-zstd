@@ -1,0 +1,32 @@
+---
+extends: default
+
+rules:
+  # Use 2 spaces everywhere.
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  # Prefer 120 chars, and don't fail on long unbreakable tokens (e.g. URLs).
+  line-length:
+    max: 120
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+
+  # GitHub Actions YAML doesn't need explicit document markers.
+  document-start: disable
+  document-end: disable
+
+  # Allow trailing spaces to be caught without failing.
+  trailing-spaces:
+    level: warning
+
+  # Enforce consistent newline style.
+  new-lines:
+    type: unix
+
+  # GitHub Actions uses the key `on:` which trips yamllint's default truthy rule.
+  # We still validate values, but don't treat keys as truthy candidates.
+  truthy:
+    check-keys: false

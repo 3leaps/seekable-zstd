@@ -1,31 +1,143 @@
 name: CI
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  BINDIR: ${{ github.workspace }}/.bin
+  SFETCH_CACHE_DIR: ${{ github.workspace }}/.cache/sfetch
+  GONEAT_VERSION: v0.3.17
+
 jobs:
-  rust:
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
         rust: [stable, "1.70"]
+
     steps:
       - uses: actions/checkout@v4
-      - name: Bootstrap tools (sfetch + goneat)
+
+      - name: Install trust prerequisites (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
         run: |
-          make bootstrap
-          # Ensure user-space bin dir is on PATH
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      - name: Install development tools
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl minisign
+
+      - name: Install trust prerequisites (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
         run: |
-          # Use goneat-configured tools.yaml scopes
-          goneat doctor tools --scope languages --install --yes --install-package-managers --yes
+          set -euo pipefail
+          brew install minisign
+
+      - name: Install sfetch (trust anchor)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$BINDIR" "$SFETCH_CACHE_DIR"
+          echo "$BINDIR" >> "$GITHUB_PATH"
+
+          curl -sSfL "https://github.com/3leaps/sfetch/releases/latest/download/install-sfetch.sh" | \
+            bash -s -- --yes --dir "$BINDIR"
+
+          sfetch --self-verify
+
+      - name: Install goneat (verified)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$BINDIR" "$SFETCH_CACHE_DIR"
+
+          sfetch --repo fulmenhq/goneat \
+            --tag "$GONEAT_VERSION" \
+            --dest-dir "$BINDIR" \
+            --cache-dir "$SFETCH_CACHE_DIR" \
+            --require-minisign
+
+          goneat --version
+
+      - name: Validate goneat tools config
+        shell: bash
+        run: |
+          set -euo pipefail
+          goneat doctor tools --validate-config
+
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - run: make quality
-      - run: make test
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rust fmt
+        run: cargo fmt -- --check
+
+      - name: Rust clippy
+        run: cargo clippy -- -D warnings
+
+      - name: Rust tests
+        run: cargo test
+
+      - name: Build Rust static lib for Go tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          os="$(uname -s | tr '[:upper:]' '[:lower:]')"
+          arch="$(uname -m)"
+          case "$arch" in
+            x86_64) arch=amd64 ;;
+            aarch64|arm64) arch=arm64 ;;
+            *) echo "unsupported arch: $arch"; exit 1 ;;
+          esac
+
+          cargo build --release -p seekable-zstd-core
+
+          lib_dir="bindings/go/lib/local/${os}-${arch}"
+          mkdir -p "$lib_dir"
+          cp "target/release/libseekable_zstd_core.a" "$lib_dir/libseekable_zstd_core.a"
+
+      - name: Go vet
+        run: cd bindings/go && go vet ./...
+
+      - name: Go tests (CGO)
+        run: cd bindings/go && CGO_ENABLED=1 go test ./...
+
+      - name: Python tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install uv
+          cd crates/seekable-zstd-py
+          uv sync --dev
+          uv run maturin develop
+          uv run pytest
+
+      - name: Node.js tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd bindings/nodejs
+          npm ci
+          npm test

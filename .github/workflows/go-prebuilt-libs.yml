@@ -1,0 +1,66 @@
+name: Go Prebuilt Lib Validation
+
+# Validates that the committed prebuilt CGO static libraries work in both:
+# - glibc-based Linux containers (Debian/Ubuntu family)
+# - musl-based Linux containers (Alpine family)
+#
+# Background: our Go binding selects different libraries via build tags.
+# See docs/go-binding.md ("Linux (glibc vs musl)") for details.
+# https://github.com/3leaps/seekable-zstd/blob/main/docs/go-binding.md
+
+on:
+  # Intentionally manual for now; once Linux prebuilt libs are present on main,
+  # consider enabling one of:
+  # - push: { branches: [main] }
+  # - push: { tags: ["v*"] }
+  workflow_dispatch:
+
+jobs:
+  linux-glibc-amd64:
+    name: Linux glibc (Debian) / amd64
+    runs-on: ubuntu-latest
+    container:
+      # glibc-based image (Debian Bookworm). Uses linux-amd64 prebuilt library.
+      image: golang:1.22-bookworm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tooling (CGO)
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential ca-certificates
+
+      - name: Verify prebuilt library present
+        run: |
+          test -f bindings/go/lib/linux-amd64/libseekable_zstd_core.a
+
+      - name: Go tests (CGO enabled)
+        env:
+          CGO_ENABLED: "1"
+        run: |
+          cd bindings/go
+          go test -count=1 ./...
+
+  linux-musl-amd64:
+    name: Linux musl (Alpine) / amd64
+    runs-on: ubuntu-latest
+    container:
+      # musl-based image (Alpine). Uses linux-amd64-musl via build tag "musl".
+      image: golang:1.22-alpine
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tooling (CGO)
+        run: |
+          apk add --no-cache build-base
+
+      - name: Verify prebuilt library present
+        run: |
+          test -f bindings/go/lib/linux-amd64-musl/libseekable_zstd_core.a
+
+      - name: Go tests (CGO enabled, musl tag)
+        env:
+          CGO_ENABLED: "1"
+        run: |
+          cd bindings/go
+          go test -count=1 -tags musl ./...

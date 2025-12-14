@@ -3,6 +3,6 @@
 package seekable
 
 /*
-#cgo LDFLAGS: -L${SRCDIR}/lib/windows-amd64 -lseekable_zstd_core -lws2_32 -luserenv -lbcrypt
+#cgo LDFLAGS: -L${SRCDIR}/lib/local/windows-amd64 -L${SRCDIR}/lib/windows-amd64 -lseekable_zstd_core -lws2_32 -luserenv -lbcrypt
 */
 import "C"

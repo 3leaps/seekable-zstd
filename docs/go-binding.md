@@ -40,7 +40,10 @@ func main() {
 ## Architecture
 
 The Go binding wraps the Rust static library via CGO.
-Pre-built static libraries are included for Linux (amd64/arm64) and macOS (amd64/arm64).
+Pre-built static libraries are included under `bindings/go/lib/<platform>/`.
+
+For local development, `make test-go` builds a fresh static library into `bindings/go/lib/local/<platform>/`.
+The CGO flags prefer the `local/` directory first, so you can test changes without overwriting committed prebuilt artifacts.
 
 ## Build Requirements
 

@@ -3,6 +3,6 @@
 package seekable
 
 /*
-#cgo LDFLAGS: -L${SRCDIR}/lib/linux-amd64 -lseekable_zstd_core -lm -lpthread
+#cgo LDFLAGS: -L${SRCDIR}/lib/local/linux-amd64 -L${SRCDIR}/lib/linux-amd64 -lseekable_zstd_core -lm -lpthread
 */
 import "C"

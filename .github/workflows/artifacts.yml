@@ -69,6 +69,9 @@ jobs:
           targets: x86_64-apple-darwin,aarch64-apple-darwin
 
       - name: Build
+        env:
+          # Build for broad compatibility.
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
         run: |
           cargo build --release --target x86_64-apple-darwin -p seekable-zstd-core
           cargo build --release --target aarch64-apple-darwin -p seekable-zstd-core
@@ -87,9 +90,40 @@ jobs:
           name: macos-libs
           path: dist/*
 
+  build-windows:
+    name: Build Windows Libs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+
+      - name: Install cargo-zigbuild
+        run: |
+          pip install ziglang
+          cargo install cargo-zigbuild
+
+      - name: Build AMD64
+        run: |
+          cargo zigbuild --release --target x86_64-pc-windows-gnu -p seekable-zstd-core
+
+      - name: Organize Artifacts
+        run: |
+          mkdir -p dist/windows-amd64
+          cp target/x86_64-pc-windows-gnu/release/libseekable_zstd_core.a dist/windows-amd64/
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-libs
+          path: dist/*
+
   commit-artifacts:
     name: Commit Artifacts
-    needs: [build-linux, build-macos]
+    needs: [build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
     steps:
@@ -110,6 +144,9 @@ jobs:
 
           # macOS
           cp -r download-libs/macos-libs/* bindings/go/lib/
+
+          # Windows
+          cp -r download-libs/windows-libs/* bindings/go/lib/
 
           echo "Artifact structure:"
           ls -R bindings/go/lib

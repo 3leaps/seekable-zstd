@@ -1,6 +1,7 @@
 .plans/
 target/
-bindings/go/lib/**/*.a
+# Go: local build outputs (prebuilt libs are committed under bindings/go/lib/<platform>/)
+bindings/go/lib/local/**
 **/node_modules
 **/*.rs.bk
 Cargo.lock

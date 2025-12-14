@@ -49,6 +49,13 @@ GONEAT_RESOLVE = \
 OS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 ARCH := $(shell uname -m)
 
+# macOS builds: target older deployment for broad compatibility.
+ifeq ($(OS),darwin)
+	BUILD_RUST_ENV := MACOSX_DEPLOYMENT_TARGET=11.0
+else
+	BUILD_RUST_ENV :=
+endif
+
 # Fix arch names
 ifeq ($(ARCH),x86_64)
 	ARCH = amd64
@@ -57,7 +64,9 @@ ifeq ($(ARCH),aarch64)
 	ARCH = arm64
 endif
 
-LIB_DIR := bindings/go/lib/$(OS)-$(ARCH)
+PREBUILT_LIB_ROOT := bindings/go/lib
+LOCAL_LIB_ROOT := $(PREBUILT_LIB_ROOT)/local
+LIB_DIR := $(LOCAL_LIB_ROOT)/$(OS)-$(ARCH)
 
 # Quality gates
 .PHONY: quality
@@ -159,8 +168,19 @@ test-node:
 .PHONY: build-rust-lib
 build-rust-lib:
 	mkdir -p $(LIB_DIR)
-	cargo build --release -p seekable-zstd-core
+	$(BUILD_RUST_ENV) cargo build --release -p seekable-zstd-core
 	cp target/release/libseekable_zstd_core.a $(LIB_DIR)/libseekable_zstd_core.a
+
+# Maintainer convenience: regenerate committed macOS prebuilt libraries.
+# Linux/Windows prebuilt libs are produced in CI via .github/workflows/artifacts.yml.
+.PHONY: build-go-prebuilt-darwin
+build-go-prebuilt-darwin:
+	@rustup target add aarch64-apple-darwin x86_64-apple-darwin
+	mkdir -p $(PREBUILT_LIB_ROOT)/darwin-arm64 $(PREBUILT_LIB_ROOT)/darwin-amd64
+	MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release --target aarch64-apple-darwin -p seekable-zstd-core
+	cp target/aarch64-apple-darwin/release/libseekable_zstd_core.a $(PREBUILT_LIB_ROOT)/darwin-arm64/libseekable_zstd_core.a
+	MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release --target x86_64-apple-darwin -p seekable-zstd-core
+	cp target/x86_64-apple-darwin/release/libseekable_zstd_core.a $(PREBUILT_LIB_ROOT)/darwin-amd64/libseekable_zstd_core.a
 
 # Hook management
 .PHONY: hooks-generate
@@ -222,7 +242,7 @@ build: build-rust-lib
 .PHONY: clean
 clean:
 	cargo clean
-	rm -rf bindings/go/lib/*/libseekable_zstd_core.a
+	rm -rf $(LOCAL_LIB_ROOT)
 	rm -rf bindings/nodejs/target
 	rm -rf crates/seekable-zstd-py/.venv
 	rm -rf crates/seekable-zstd-py/target

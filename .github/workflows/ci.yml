@@ -47,30 +47,33 @@ jobs:
           set -euo pipefail
           mkdir -p "$BINDIR" "$SFETCH_CACHE_DIR"
           echo "$BINDIR" >> "$GITHUB_PATH"
+          export PATH="$BINDIR:$PATH"
 
           curl -sSfL "https://github.com/3leaps/sfetch/releases/latest/download/install-sfetch.sh" | \
             bash -s -- --yes --dir "$BINDIR"
 
-          sfetch --self-verify
+          "$BINDIR/sfetch" --self-verify
 
       - name: Install goneat (verified)
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$BINDIR" "$SFETCH_CACHE_DIR"
+          export PATH="$BINDIR:$PATH"
 
-          sfetch --repo fulmenhq/goneat \
+          "$BINDIR/sfetch" --repo fulmenhq/goneat \
             --tag "$GONEAT_VERSION" \
             --dest-dir "$BINDIR" \
             --cache-dir "$SFETCH_CACHE_DIR" \
             --require-minisign
 
-          goneat --version
+          "$BINDIR/goneat" --version
 
       - name: Validate goneat tools config
         shell: bash
         run: |
           set -euo pipefail
+          export PATH="$BINDIR:$PATH"
           goneat doctor tools --validate-config
 
       - uses: dtolnay/rust-toolchain@master

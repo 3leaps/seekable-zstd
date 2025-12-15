@@ -16,6 +16,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     encoder.write_all(text.as_bytes())?;
     encoder.finish()?;
 
-    println!("Generated fixture at {}", output_path);
+    println!("Generated fixture at {output_path}");
     Ok(())
 }

@@ -143,4 +143,5 @@ jobs:
           set -euo pipefail
           cd bindings/nodejs
           npm ci
+          npm run build
           npm test

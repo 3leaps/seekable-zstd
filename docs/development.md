@@ -428,6 +428,7 @@ When updating CI’s pinned Rust toolchain, validate the assumption locally befo
 ```bash
 # Preflight the same crates CI will compile.
 # Uses an isolated temp target dir, so it doesn't pollute `target/`.
+# Runs `cargo check` + `cargo clippy -- -D warnings`.
 make ci-preflight TOOLCHAIN=1.88.0
 ```
 

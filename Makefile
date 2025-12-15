@@ -141,10 +141,14 @@ ci-preflight:
 	if ! command -v rustup >/dev/null 2>&1; then echo "❌ rustup not found"; exit 1; fi; \
 	echo "→ Installing Rust toolchain $$TOOLCHAIN (minimal)..."; \
 	rustup toolchain install "$$TOOLCHAIN" --profile minimal >/dev/null; \
+	echo "→ Installing clippy component for $$TOOLCHAIN..."; \
+	rustup component add --toolchain "$$TOOLCHAIN" clippy >/dev/null; \
 	tmp="$$(mktemp -d)"; \
 	trap 'rm -rf "$$tmp"' EXIT; \
 	echo "→ Preflight cargo check with $$TOOLCHAIN"; \
-	CARGO_TARGET_DIR="$$tmp" cargo +"$$TOOLCHAIN" check -p seekable-zstd-core -p seekable-zstd-node --all-targets
+	CARGO_TARGET_DIR="$$tmp" cargo +"$$TOOLCHAIN" check -p seekable-zstd-core -p seekable-zstd-node --all-targets; \
+	echo "→ Preflight cargo clippy (-D warnings) with $$TOOLCHAIN"; \
+	CARGO_TARGET_DIR="$$tmp" cargo +"$$TOOLCHAIN" clippy -- -D warnings
 
 .PHONY: lint-rust
 lint-rust:

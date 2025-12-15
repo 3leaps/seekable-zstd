@@ -134,6 +134,18 @@ lint-actions:
 	yamllint .github/workflows/*.yml .goneat/tools.yaml .yamllint
 	actionlint .github/workflows/*.yml
 
+.PHONY: ci-preflight
+ci-preflight:
+	@set -eu; \
+	TOOLCHAIN="$${TOOLCHAIN:-1.88.0}"; \
+	if ! command -v rustup >/dev/null 2>&1; then echo "❌ rustup not found"; exit 1; fi; \
+	echo "→ Installing Rust toolchain $$TOOLCHAIN (minimal)..."; \
+	rustup toolchain install "$$TOOLCHAIN" --profile minimal >/dev/null; \
+	tmp="$$(mktemp -d)"; \
+	trap 'rm -rf "$$tmp"' EXIT; \
+	echo "→ Preflight cargo check with $$TOOLCHAIN"; \
+	CARGO_TARGET_DIR="$$tmp" cargo +"$$TOOLCHAIN" check -p seekable-zstd-core -p seekable-zstd-node --all-targets
+
 .PHONY: lint-rust
 lint-rust:
 	cargo clippy -- -D warnings

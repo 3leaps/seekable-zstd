@@ -6,13 +6,13 @@ This guide covers development setup, workflow, and tooling for seekable-zstd.
 
 ### Required Tools
 
-| Tool    | Version | Purpose             |
-| ------- | ------- | ------------------- |
-| Rust    | 1.70+   | Core library        |
-| Go      | 1.21+   | Go bindings         |
-| Python  | 3.10+   | Python bindings     |
-| Node.js | 18+     | TypeScript bindings |
-| Make    | Any     | Build orchestration |
+| Tool    | Version                           | Purpose             |
+| ------- | --------------------------------- | ------------------- |
+| Rust    | 1.85+ (1.88+ for Node.js binding) | Core library        |
+| Go      | 1.21+                             | Go bindings         |
+| Python  | 3.10+                             | Python bindings     |
+| Node.js | 18+                               | TypeScript bindings |
+| Make    | Any                               | Build orchestration |
 
 ### Optional Tools
 
@@ -413,6 +413,28 @@ Ensure you're running the full test suite:
 ```bash
 make test          # Full suite, not just cargo test
 ```
+
+### CI Rust Toolchain Drift (Runbook)
+
+CI intentionally tests both `stable` and an explicit “minimum supported” Rust toolchain. This is useful, but it can churn when upstream dependencies raise their MSRV (minimum supported Rust version).
+
+Common examples:
+
+- Some crates adopt `edition = "2024"` (requires newer Cargo/Rust than `2021`).
+- `bindings/nodejs` depends on `napi-build`, which can raise MSRV independently.
+
+When updating CI’s pinned Rust toolchain, validate the assumption locally before pushing:
+
+```bash
+# Preflight the same crates CI will compile.
+# Uses an isolated temp target dir, so it doesn't pollute `target/`.
+make ci-preflight TOOLCHAIN=1.88.0
+```
+
+If it fails, use the error message to decide whether to:
+
+- bump the pinned toolchain in CI, or
+- pin a dependency version (rare; prefer bumping toolchain unless policy requires otherwise).
 
 ---
 

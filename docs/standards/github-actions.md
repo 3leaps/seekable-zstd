@@ -90,6 +90,14 @@ If a script relies on bashisms, set `shell: bash` explicitly.
 - Avoid `pull_request_target` unless the workflow is explicitly designed for it and reviewed.
 - Never print secrets; avoid `set -x` in steps that may handle credentials.
 
+### Authenticated GitHub API access
+
+- Prefer job-level `env` for `GITHUB_TOKEN` (and `GH_TOKEN`) so any tooling that hits GitHub APIs is authenticated by default. This reduces intermittent `403/429` responses under parallel CI load.
+
+### Retry/backoff for signed artifact fetches
+
+- If a workflow installs a signed artifact from GitHub releases (e.g., via `sfetch` with minisign verification), a short retry loop with backoff is acceptable to handle transient GitHub `403/429` responses.
+
 ---
 
 ## 9. Repository Consistency

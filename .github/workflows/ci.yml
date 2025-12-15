@@ -71,11 +71,22 @@ jobs:
           mkdir -p "$BINDIR" "$SFETCH_CACHE_DIR"
           export PATH="$BINDIR:$PATH"
 
-          "$BINDIR/sfetch" --repo fulmenhq/goneat \
-            --tag "$GONEAT_VERSION" \
-            --dest-dir "$BINDIR" \
-            --cache-dir "$SFETCH_CACHE_DIR" \
-            --require-minisign
+          # GitHub can intermittently return 403/429 under parallel CI load
+          # (secondary rate limiting / abuse detection). Since this is a
+          # public, signed artifact fetch, a short retry with backoff is OK.
+          for attempt in 1 2 3 4 5; do
+            if "$BINDIR/sfetch" --repo fulmenhq/goneat \
+              --tag "$GONEAT_VERSION" \
+              --dest-dir "$BINDIR" \
+              --cache-dir "$SFETCH_CACHE_DIR" \
+              --require-minisign; then
+              break
+            fi
+
+            sleep_seconds=$((attempt * 5))
+            echo "sfetch failed (attempt $attempt); sleeping ${sleep_seconds}s..."
+            sleep "$sleep_seconds"
+          done
 
           "$BINDIR/goneat" --version
 

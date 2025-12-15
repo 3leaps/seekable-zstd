@@ -17,6 +17,11 @@ env:
 jobs:
   test:
     runs-on: ${{ matrix.os }}
+    env:
+      # Always authenticate GitHub API calls to reduce 403s/rate limits.
+      # `sfetch` and other tools typically respect one of these env vars.
+      GITHUB_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
     strategy:
       fail-fast: false
       matrix:
@@ -47,8 +52,6 @@ jobs:
           key: ${{ runner.os }}-sfetch-cache-${{ env.GONEAT_VERSION }}
 
       - name: Install sfetch (trust anchor)
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -62,8 +65,6 @@ jobs:
           "$BINDIR/sfetch" --self-verify
 
       - name: Install goneat (verified)
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail

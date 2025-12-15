@@ -31,7 +31,7 @@ BINDIR_RESOLVE = \
 	fi
 
 # Tooling (installed into user-space bindir)
-GONEAT_VERSION ?= v0.3.17
+GONEAT_VERSION ?= v0.3.20
 GONEAT := goneat
 
 SFETCH_RESOLVE = \

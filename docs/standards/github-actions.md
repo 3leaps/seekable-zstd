@@ -98,6 +98,10 @@ If a script relies on bashisms, set `shell: bash` explicitly.
 
 - If a workflow installs a signed artifact from GitHub releases (e.g., via `sfetch` with minisign verification), a short retry loop with backoff is acceptable to handle transient GitHub `403/429` responses.
 
+### Reduce GitHub API fan-out
+
+- Prefer installing shared tools once (per OS) and distributing them to matrix jobs via `actions/upload-artifact` / `actions/download-artifact` instead of having every job independently hit GitHub APIs.
+
 ---
 
 ## 9. Repository Consistency

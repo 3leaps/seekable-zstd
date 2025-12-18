@@ -1,6 +1,10 @@
 # seekable-zstd
 
+![Lifecycle: Alpha](https://img.shields.io/badge/lifecycle-alpha-orange)
+
 Seekable zstd: random access reads and parallel decompression.
+
+> **Alpha**: v0.1.0 focuses on tagging + build artifacts (CI-built prebuilt libs). Publishing to package registries is planned for v0.2.x.
 
 ## Why Seekable Compression?
 
@@ -26,7 +30,15 @@ Seekable zstd divides data into independently-compressed frames with a seek tabl
 - Compressed index files with random lookups
 - Large dataset sharding without pre-splitting
 - Streaming partial results from compressed archives
-  \n## Overview\n\nseekable-zstd implements the seekable zstd format with Rust core and bindings for Go, Python, Node.js. It enables direct byte-range access to compressed data and concurrent decompression across ranges, supporting efficient parallel processing of large files like logs and indexes without full sequential decompression.\n\nThis library wraps the [seekable zstd format](https://github.com/facebook/zstd/tree/dev/contrib/seekable_format) with ergonomic APIs for multiple languages.\n\n**Features:**
+
+## Overview
+
+seekable-zstd implements the seekable zstd format with Rust core and bindings for Go, Python, Node.js. It enables direct byte-range access to compressed data and concurrent decompression across ranges, supporting efficient parallel processing of large files like logs and indexes without full sequential decompression.
+
+This library wraps the [seekable zstd format](https://github.com/facebook/zstd/tree/dev/contrib/seekable_format) with ergonomic APIs for multiple languages.
+
+**Features:**
+
 - Compress data in independently-accessible frames
 - Read any byte range without decompressing the entire file
 - Decompress multiple ranges concurrently via rayon
@@ -54,6 +66,11 @@ npm install seekable-zstd
 # Go
 go get github.com/3leaps/seekable-zstd/bindings/go
 ```
+
+Go prebuilt libraries:
+
+- Linux glibc is the default: `bindings/go/lib/linux-<arch>/`
+- Linux musl is explicit: build with `-tags musl` and uses `bindings/go/lib/linux-<arch>-musl/`
 
 ## Quick Start
 

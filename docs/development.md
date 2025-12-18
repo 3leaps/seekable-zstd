@@ -6,13 +6,13 @@ This guide covers development setup, workflow, and tooling for seekable-zstd.
 
 ### Required Tools
 
-| Tool    | Version                           | Purpose             |
-| ------- | --------------------------------- | ------------------- |
-| Rust    | 1.85+ (1.88+ for Node.js binding) | Core library        |
-| Go      | 1.21+                             | Go bindings         |
-| Python  | 3.10+                             | Python bindings     |
-| Node.js | 18+                               | TypeScript bindings |
-| Make    | Any                               | Build orchestration |
+| Tool    | Version | Purpose             |
+| ------- | ------- | ------------------- |
+| Rust    | 1.88+   | Core library        |
+| Go      | 1.21+   | Go bindings         |
+| Python  | 3.10+   | Python bindings     |
+| Node.js | 18+     | TypeScript bindings |
+| Make    | Any     | Build orchestration |
 
 ### Optional Tools
 
@@ -76,11 +76,7 @@ scoop install goneat
 go install github.com/fulmenhq/goneat@latest
 ```
 
-**Bootstrap script:**
-
-```bash
-curl -sSL https://raw.githubusercontent.com/fulmenhq/goneat/main/install.sh | bash
-```
+**Note:** In this repo, `make bootstrap` uses `sfetch` as the trust anchor to install `goneat`.
 
 ## First-Time Setup
 
@@ -89,16 +85,23 @@ curl -sSL https://raw.githubusercontent.com/fulmenhq/goneat/main/install.sh | ba
 git clone https://github.com/3leaps/seekable-zstd
 cd seekable-zstd
 
-# Bootstrap (installs dependencies, sets up hooks)
+# Bootstrap (installs trusted tooling and hooks)
 make bootstrap
 ```
 
+Bootstrap prerequisites (developer machine):
+
+- `curl`
+- `bash`
+- `minisign` (required for validating signed releases via the sfetch trust anchor)
+
 The bootstrap target:
 
-1. Checks for required tools (rustup, go, python, node)
-2. Installs Rust toolchain components (rustfmt, clippy)
-3. Installs project dependencies
-4. Sets up git hooks
+1. Installs `sfetch` (trust anchor) if missing
+2. Runs `sfetch --self-verify`
+3. Installs pinned `goneat`
+4. Installs language toolchains + foundation tools via `goneat doctor tools`
+5. Installs git hooks (skipped in CI)
 
 ---
 

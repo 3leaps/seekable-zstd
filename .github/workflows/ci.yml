@@ -80,10 +80,67 @@ jobs:
           set -euo pipefail
           mkdir -p "$BINDIR" "$SFETCH_CACHE_DIR"
 
-          curl -sSfL "https://github.com/3leaps/sfetch/releases/latest/download/install-sfetch.sh" | \
-            bash -s -- --yes --dir "$BINDIR"
+          # The official installer uses the GitHub Releases API to discover the latest version.
+          # Under parallel CI fan-out this can hit secondary rate limiting (403/429).
+          # For CI, install from pinned release assets and verify via minisign.
 
-          "$BINDIR/sfetch" --self-verify
+          case "$(uname -s)" in
+            Darwin*) os=darwin ;;
+            Linux*) os=linux ;;
+            *) echo "unsupported OS: $(uname -s)"; exit 1 ;;
+          esac
+
+          case "$(uname -m)" in
+            x86_64|amd64) arch=amd64 ;;
+            arm64|aarch64) arch=arm64 ;;
+            *) echo "unsupported arch: $(uname -m)"; exit 1 ;;
+          esac
+
+          platform="${os}_${arch}"
+          archive="sfetch_${platform}.tar.gz"
+          base_url="https://github.com/3leaps/sfetch/releases/download/${SFETCH_VERSION}"
+
+          auth=()
+          if [ -n "${GITHUB_TOKEN:-}" ]; then
+            auth=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+          fi
+
+          tmpdir="$(mktemp -d)"
+          trap 'rm -rf "${tmpdir}"' EXIT
+
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 2 "${auth[@]}" \
+            -o "${tmpdir}/SHA256SUMS" "${base_url}/SHA256SUMS"
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 2 "${auth[@]}" \
+            -o "${tmpdir}/SHA256SUMS.minisig" "${base_url}/SHA256SUMS.minisig"
+          curl -sSfL --retry 5 --retry-all-errors --retry-delay 2 "${auth[@]}" \
+            -o "${tmpdir}/${archive}" "${base_url}/${archive}"
+
+          pubkey_file="${tmpdir}/sfetch-minisign.pub"
+          echo "untrusted comment: sfetch release signing key" >"${pubkey_file}"
+          echo "RWTAoUJ007VE3h8tbHlBCyk2+y0nn7kyA4QP34LTzdtk8M6A2sryQtZC" >>"${pubkey_file}"
+
+          minisign -Vm "${tmpdir}/SHA256SUMS" -p "${pubkey_file}" >/dev/null
+
+          expected="$(grep "${archive}" "${tmpdir}/SHA256SUMS" | head -1 | cut -d' ' -f1)"
+          if [ -z "${expected}" ]; then
+            echo "missing checksum for ${archive}"; exit 1
+          fi
+
+          if command -v sha256sum >/dev/null 2>&1; then
+            actual="$(sha256sum "${tmpdir}/${archive}" | cut -d' ' -f1)"
+          else
+            actual="$(shasum -a 256 "${tmpdir}/${archive}" | cut -d' ' -f1)"
+          fi
+
+          if [ "${actual}" != "${expected}" ]; then
+            echo "checksum mismatch for ${archive}"; exit 1
+          fi
+
+          tar -xzf "${tmpdir}/${archive}" -C "${tmpdir}"
+          cp "${tmpdir}/sfetch" "${BINDIR}/sfetch"
+          chmod +x "${BINDIR}/sfetch"
+
+          "${BINDIR}/sfetch" --self-verify
 
       - name: Install goneat (verified)
         shell: bash

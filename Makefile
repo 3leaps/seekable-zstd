@@ -259,6 +259,11 @@ hooks-remove:
 bootstrap:
 	@set -eu; \
 	$(BINDIR_RESOLVE); mkdir -p "$$BINDIR"; \
+	# Prereqs: keep bootstrap high-trust and explicit. \
+	# We do not auto-install system packages for developers. \
+	command -v curl >/dev/null 2>&1 || (echo "❌ curl is required for bootstrap" && exit 1); \
+	command -v bash >/dev/null 2>&1 || (echo "❌ bash is required for bootstrap" && exit 1); \
+	command -v minisign >/dev/null 2>&1 || (echo "❌ minisign is required to validate signed releases (trust anchor)" && exit 1); \
 	$(SFETCH_RESOLVE); \
 	if [ -z "$$SFETCH" ]; then \
 		echo "→ Installing sfetch (trust anchor) into $$BINDIR..."; \

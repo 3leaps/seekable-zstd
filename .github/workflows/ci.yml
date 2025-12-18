@@ -12,24 +12,47 @@ permissions:
 env:
   BINDIR: ${{ github.workspace }}/.bin
   SFETCH_CACHE_DIR: ${{ github.workspace }}/.cache/sfetch
+  # Pinned tool versions.
+  # Note: CI currently uses the official `install-sfetch.sh` entrypoint.
+  # If/when we support version pinning for the installer, wire this through.
+  SFETCH_VERSION: v0.2.8
   GONEAT_VERSION: v0.3.20
 
 jobs:
-  test:
+  tools:
+    name: Tools (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    env:
-      # Always authenticate GitHub API calls to reduce 403s/rate limits.
-      # `sfetch` and other tools typically respect one of these env vars.
-      GITHUB_TOKEN: ${{ github.token }}
-      GH_TOKEN: ${{ github.token }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        rust: [stable, "1.88"]
 
     steps:
       - uses: actions/checkout@v4
+
+      # Prefer a GitHub App token when available; fall back to the default workflow token.
+      # This keeps tokens short-lived and scoped.
+      - name: Mint GitHub App token (optional)
+        id: app-token
+        # `secrets.*` is not available in `if:` expressions. Gate on fork PRs instead.
+        if: >-
+          ${{ github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository }}
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.CI_GH_APP_ID }}
+          private-key: ${{ secrets.CI_GH_APP_PRIVATE_KEY }}
+
+      - name: Configure CI auth token
+        shell: bash
+        env:
+          TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+        run: |
+          set -euo pipefail
+          {
+            echo "GITHUB_TOKEN=$TOKEN"
+            echo "GH_TOKEN=$TOKEN"
+          } >> "$GITHUB_ENV"
 
       - name: Install trust prerequisites (Linux)
         if: runner.os == 'Linux'
@@ -49,15 +72,13 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ${{ env.SFETCH_CACHE_DIR }}
-          key: ${{ runner.os }}-sfetch-cache-${{ env.GONEAT_VERSION }}
+          key: ${{ runner.os }}-sfetch-cache-${{ env.SFETCH_VERSION }}-${{ env.GONEAT_VERSION }}
 
       - name: Install sfetch (trust anchor)
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$BINDIR" "$SFETCH_CACHE_DIR"
-          echo "$BINDIR" >> "$GITHUB_PATH"
-          export PATH="$BINDIR:$PATH"
 
           curl -sSfL "https://github.com/3leaps/sfetch/releases/latest/download/install-sfetch.sh" | \
             bash -s -- --yes --dir "$BINDIR"
@@ -69,7 +90,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$BINDIR" "$SFETCH_CACHE_DIR"
-          export PATH="$BINDIR:$PATH"
 
           # GitHub can intermittently return 403/429 under parallel CI load
           # (secondary rate limiting / abuse detection). Since this is a
@@ -90,12 +110,46 @@ jobs:
 
           "$BINDIR/goneat" --version
 
+      - name: Upload tools artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-tools-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            ${{ env.BINDIR }}/sfetch
+            ${{ env.BINDIR }}/goneat
+
+  test:
+    name: Test (${{ matrix.os }}, rust ${{ matrix.rust }})
+    needs: tools
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        rust: [stable, "1.88"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download tools artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-tools-${{ matrix.os }}
+          path: ${{ env.BINDIR }}
+
+      - name: Activate tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x "$BINDIR/sfetch" "$BINDIR/goneat"
+          echo "$BINDIR" >> "$GITHUB_PATH"
+
       - name: Validate goneat tools config
         shell: bash
         run: |
           set -euo pipefail
-          export PATH="$BINDIR:$PATH"
-          goneat doctor tools --validate-config
+          "$BINDIR/goneat" doctor tools --validate-config
 
       - uses: dtolnay/rust-toolchain@master
         with:

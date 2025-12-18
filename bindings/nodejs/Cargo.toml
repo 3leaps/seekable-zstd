@@ -2,8 +2,7 @@
 name = "seekable-zstd-node"
 version = "0.1.0"
 edition = "2021"
-# Upgrade rust-version to 1.77 to support modern cargo syntax used by deps
-rust-version = "1.77"
+rust-version = "1.88"
 
 [lib]
 crate-type = ["cdylib"]

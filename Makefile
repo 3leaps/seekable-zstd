@@ -138,17 +138,42 @@ lint-actions:
 ci-preflight:
 	@set -eu; \
 	TOOLCHAIN="$${TOOLCHAIN:-1.88.0}"; \
+	OFFLINE="$${OFFLINE:-0}"; \
 	if ! command -v rustup >/dev/null 2>&1; then echo "❌ rustup not found"; exit 1; fi; \
-	echo "→ Installing Rust toolchain $$TOOLCHAIN (minimal)..."; \
-	rustup toolchain install "$$TOOLCHAIN" --profile minimal >/dev/null; \
-	echo "→ Installing clippy component for $$TOOLCHAIN..."; \
-	rustup component add --toolchain "$$TOOLCHAIN" clippy >/dev/null; \
+	if [ "$$OFFLINE" = "1" ]; then \
+		echo "→ Offline mode: verifying Rust toolchain $$TOOLCHAIN is installed"; \
+		rustup toolchain list | grep -q "^$${TOOLCHAIN}" || (echo "❌ Rust toolchain $$TOOLCHAIN not installed (OFFLINE=1)" && exit 1); \
+	else \
+		echo "→ Installing Rust toolchain $$TOOLCHAIN (minimal)..."; \
+		rustup toolchain install "$$TOOLCHAIN" --profile minimal >/dev/null; \
+	fi; \
+	if [ "$$OFFLINE" = "1" ]; then \
+		echo "→ Offline mode: verifying clippy component for $$TOOLCHAIN"; \
+		rustup component add --toolchain "$$TOOLCHAIN" clippy --force-non-host >/dev/null 2>&1 || true; \
+	else \
+		echo "→ Installing clippy component for $$TOOLCHAIN..."; \
+		rustup component add --toolchain "$$TOOLCHAIN" clippy >/dev/null; \
+	fi; \
 	tmp="$$(mktemp -d)"; \
 	trap 'rm -rf "$$tmp"' EXIT; \
 	echo "→ Preflight cargo check with $$TOOLCHAIN"; \
-	CARGO_TARGET_DIR="$$tmp" cargo +"$$TOOLCHAIN" check -p seekable-zstd-core -p seekable-zstd-node --all-targets; \
+	CARGO_TARGET_DIR="$$tmp" cargo +"$$TOOLCHAIN" check --offline -p seekable-zstd-core -p seekable-zstd-node --all-targets; \
 	echo "→ Preflight cargo clippy (-D warnings) with $$TOOLCHAIN"; \
-	CARGO_TARGET_DIR="$$tmp" cargo +"$$TOOLCHAIN" clippy -- -D warnings
+	CARGO_TARGET_DIR="$$tmp" cargo +"$$TOOLCHAIN" clippy --offline -- -D warnings
+
+.PHONY: ci-offline
+ci-offline:
+	@set -eu; \
+	TOOLCHAIN="$${TOOLCHAIN:-1.88.0}"; \
+	echo "→ Lint workflows"; \
+	$(MAKE) lint-actions; \
+	echo "→ Verify CI avoids sfetch GitHub API install"; \
+	! rg -n "api\.github\.com/repos/3leaps/sfetch/releases|releases/latest/download/install-sfetch\.sh" .github/workflows/ci.yml >/dev/null; \
+	echo "→ Verify artifacts workflow commits to main"; \
+	rg -n "ref: main" .github/workflows/artifacts.yml >/dev/null; \
+	rg -n "contents: write" .github/workflows/artifacts.yml >/dev/null; \
+	echo "→ Offline Rust preflight"; \
+	$(MAKE) ci-preflight TOOLCHAIN="$$TOOLCHAIN" OFFLINE=1
 
 .PHONY: lint-rust
 lint-rust:

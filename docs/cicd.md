@@ -47,6 +47,13 @@ High-level intent:
 - glibc: `x86_64-unknown-linux-gnu.2.17` and `aarch64-unknown-linux-gnu.2.17`
 - musl: `x86_64-unknown-linux-musl` and `aarch64-unknown-linux-musl`
 
+Artifact naming in this repo (examples):
+
+- CI tools artifact: `ci-tools-ubuntu-latest`, `ci-tools-macos-latest`
+- Prebuilt lib artifacts: `linux-libs`, `macos-libs`, `windows-libs`
+
+If you see unexpected platform strings (e.g. `unknown`) in artifact names or output paths, treat it as a bug and check the workflow logs for where OS/arch detection failed.
+
 The canonical build logic lives in `.github/workflows/artifacts.yml`.
 
 ### Remote builders

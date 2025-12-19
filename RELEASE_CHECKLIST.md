@@ -9,10 +9,11 @@ Publishing to package registries (crates.io / PyPI / npm) is planned for v0.2.x.
 
 ---
 
-## SSOT
+## Read This First
 
-- Process notes / MVP: `.plans/active/v0.1.0/bootstrap-completion.md`
-- CI auth (GitHub App tokens): `.plans/active/github-app-auth-for-ci.md`
+- `docs/cicd.md` (why CI artifacts are required)
+- `docs/go-binding.md` (expected `bindings/go/lib/**` layout)
+- `docs/development.md` (local targets like `make ci-offline`)
 
 ---
 
@@ -60,10 +61,17 @@ gh workflow run "Build Artifacts" --ref main -f commit_to_main=true
 gh run watch --exit-status
 ```
 
-Required privileges to run this from local:
+## Credentials for `gh`
 
-- Your `gh` auth must be able to trigger `workflow_dispatch` in this repo.
-- The workflow itself performs the commit via `contents: write` on the `commit-artifacts` job.
+To run workflow_dispatch from local using `gh`, your token must be able to dispatch workflows in this repo.
+
+Recommended: **fine-grained PAT** scoped to `3leaps/seekable-zstd` with:
+
+- Actions: Read and write
+- Workflows: Read and write
+- Contents: Read
+
+The workflow itself performs the commit via `contents: write` on the `commit-artifacts` job.
 
 3. Validate Linux linking for Go users:
 

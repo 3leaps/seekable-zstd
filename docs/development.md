@@ -367,13 +367,17 @@ These targets:
 
 ### Release
 
-1. Ensure all tests pass on main
-2. Bump version: `make bump-patch|minor|major`
-3. Update CHANGELOG.md
-4. Create release commit
-5. Request push authorization
-6. Tag release after push
-7. Publish packages (crates.io, PyPI, npm)
+See `RELEASE_CHECKLIST.md` for the step-by-step SSOT.
+
+High-level flow:
+
+1. Ensure CI is green on `main`
+2. Prepare prebuilt Go libs (release prep): run `.github/workflows/artifacts.yml` via `workflow_dispatch` with `commit_to_main=true`
+3. Validate Go prebuilt linking (glibc + musl): run `.github/workflows/go-prebuilt-libs.yml` via `workflow_dispatch`
+4. Bump version: `make bump-patch|minor|major`
+5. Update `CHANGELOG.md`
+6. Create release commit, push, then tag `vX.Y.Z` on the commit that includes updated `bindings/go/lib/**`
+7. Publishing to registries is planned for v0.2.x (v0.1.x focuses on tags + CI-built artifacts for early Go users)
 
 ---
 
@@ -476,17 +480,20 @@ npm run test -- --coverage
 
 The repository uses GitHub Actions for CI. Key workflows:
 
-**`.github/workflows/ci.yml`** - Runs on every PR:
+**`.github/workflows/ci.yml`**
 
-- Matrix: `ubuntu-latest`, `macos-latest`, `windows-latest`
-- Steps: build, lint, test for each language
-- Caches: Cargo registry, Go modules, npm, pip
+- Runs on pushes to `main` and on PRs
+- Uses a `tools` job (per OS) to install trusted tooling once and distribute to the test matrix via artifacts
+- Test matrix: `ubuntu-latest`, `macos-latest` × Rust `stable` and `1.88`
 
-**`.github/workflows/release.yml`** - Runs on tags:
+**`.github/workflows/artifacts.yml`**
 
-- Build release artifacts for all platforms
-- Publish to crates.io, PyPI, npm
-- Create GitHub release with binaries
+- Runs on pushes to `main` and tags `v*` to build/upload prebuilt static libraries
+- Supports release prep via `workflow_dispatch` with `commit_to_main=true`, which commits updated `bindings/go/lib/**` to `main` so tags include the correct Go prebuilt libs
+
+**`.github/workflows/go-prebuilt-libs.yml`**
+
+- Manual validation (workflow_dispatch) to prove Linux glibc + musl linking against committed prebuilt libs
 
 ### CI Matrix Example
 
@@ -495,18 +502,8 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        rust: [stable, "1.70"] # MSRV
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.rust }}
-          components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
-      - run: make quality
-      - run: make test
+        os: [ubuntu-latest, macos-latest]
+        rust: [stable, "1.88"]
 ```
 
 ### Fixture Generation

@@ -101,6 +101,7 @@ If a script relies on bashisms, set `shell: bash` explicitly.
 ### Reduce GitHub API fan-out
 
 - Prefer installing shared tools once (per OS) and distributing them to matrix jobs via `actions/upload-artifact` / `actions/download-artifact` instead of having every job independently hit GitHub APIs.
+- For Go-first releases that require committed prebuilt libs, prefer an explicit `workflow_dispatch` “release prep” mode that commits outputs to `main` before tagging.
 
 ---
 

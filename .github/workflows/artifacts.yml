@@ -2,9 +2,14 @@ name: Build Artifacts
 
 on:
   workflow_dispatch:
+    inputs:
+      commit_to_main:
+        description: Commit prebuilt libs to main (release prep)
+        type: boolean
+        default: false
   push:
-    tags:
-      - "v*"
+    branches: [main]
+    tags: ["v*"]
 
 jobs:
   build-linux:
@@ -12,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ (github.event_name == 'workflow_dispatch' && inputs.commit_to_main) && 'main' || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -62,6 +69,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ (github.event_name == 'workflow_dispatch' && inputs.commit_to_main) && 'main' || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -95,6 +104,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ (github.event_name == 'workflow_dispatch' && inputs.commit_to_main) && 'main' || github.ref }}
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -125,7 +136,7 @@ jobs:
     name: Commit Artifacts
     needs: [build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.commit_to_main }}
     permissions:
       contents: write
     steps:

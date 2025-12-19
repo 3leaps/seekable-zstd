@@ -75,8 +75,19 @@ The workflow itself performs the commit via `contents: write` on the `commit-art
 
 3. Validate Linux linking for Go users:
 
-- Run `.github/workflows/go-prebuilt-libs.yml` via GitHub UI (or `gh workflow run`)
-- Expect both glibc (Debian) and musl (Alpine) jobs to pass.
+**GitHub UI:**
+
+- Run `.github/workflows/go-prebuilt-libs.yml`
+
+**From local with `gh`:**
+
+```bash
+gh workflow run "Go Prebuilt Lib Validation" --ref main
+
+gh run watch --exit-status
+```
+
+Expect both glibc (Debian) and musl (Alpine) jobs to pass.
 
 4. Update versions if needed:
 

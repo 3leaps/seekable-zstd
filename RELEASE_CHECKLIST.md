@@ -97,7 +97,11 @@ Expect both glibc (Debian) and musl (Alpine) jobs to pass.
 
 5. Create the tag on the correct commit:
 
-- Tag the `main` commit that includes the updated `bindings/go/lib/**`.
+- Tag the exact commit SHA that:
+  - includes the updated `bindings/go/lib/**`, and
+  - is the commit validated by the Go prebuilt validation run you’re relying on.
+
+Do not tag a commit newer than the validation run’s SHA.
 
 6. Verify tag build artifacts:
 

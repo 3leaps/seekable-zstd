@@ -367,7 +367,7 @@ These targets:
 
 ### Release
 
-See `RELEASE_CHECKLIST.md` for the step-by-step SSOT.
+See `RELEASE_CHECKLIST.md` for the step-by-step SSOT and `docs/cicd.md` for the rationale behind CI-built artifacts.
 
 High-level flow:
 

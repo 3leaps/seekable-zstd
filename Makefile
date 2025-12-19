@@ -262,6 +262,39 @@ build-go-prebuilt-darwin:
 	MACOSX_DEPLOYMENT_TARGET=11.0 cargo build --release --target x86_64-apple-darwin -p seekable-zstd-core
 	cp target/x86_64-apple-darwin/release/libseekable_zstd_core.a $(PREBUILT_LIB_ROOT)/darwin-amd64/libseekable_zstd_core.a
 
+# Maintainer diagnostic: run the Linux artifact build locally in Docker.
+# This is NOT required for normal development. It's useful before tagging a release
+# (or when debugging CI failures) to sanity-check cargo-zigbuild output paths.
+#
+# Notes:
+# - This uses Docker and may require emulation if building for linux/amd64 on an arm64 host.
+# - It still requires network access to fetch toolchains and crates.
+.PHONY: artifacts-preflight-linux
+artifacts-preflight-linux:
+	@set -eu; \
+	if ! command -v docker >/dev/null 2>&1; then echo "❌ docker not found (required for artifacts-preflight-linux)"; exit 1; fi; \
+	platform="$${DOCKER_PLATFORM:-linux/amd64}"; \
+	echo "→ Running artifacts preflight in Docker ($$platform)"; \
+	docker run --rm --platform "$$platform" \
+		-v "$(PWD)":/work -w /work ubuntu:24.04 bash -lc "\
+			set -euo pipefail; \
+			apt-get update >/dev/null; \
+			apt-get install -y --no-install-recommends ca-certificates curl build-essential python3 python3-venv pkg-config >/dev/null; \
+			python3 -m venv /tmp/venv; \
+			/tmp/venv/bin/pip install --no-cache-dir ziglang >/dev/null; \
+			export PATH=\"/tmp/venv/bin:/root/.cargo/bin:$$PATH\"; \
+			curl -sSfL https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable >/dev/null; \
+			rustup target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu x86_64-unknown-linux-musl aarch64-unknown-linux-musl >/dev/null; \
+			cargo install cargo-zigbuild >/dev/null; \
+			cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.17 -p seekable-zstd-core; \
+			cargo zigbuild --release --target x86_64-unknown-linux-musl -p seekable-zstd-core; \
+			cargo zigbuild --release --target aarch64-unknown-linux-gnu.2.17 -p seekable-zstd-core; \
+			cargo zigbuild --release --target aarch64-unknown-linux-musl -p seekable-zstd-core; \
+			echo '--- outputs ---'; \
+			find target -maxdepth 4 -path '*/release/libseekable_zstd_core.a' -print \
+		" \
+		>/dev/null
+
 # Hook management
 .PHONY: hooks-generate
 hooks-generate:
@@ -331,6 +364,9 @@ clean:
 	rm -rf bindings/nodejs/target
 	rm -rf crates/seekable-zstd-py/.venv
 	rm -rf crates/seekable-zstd-py/target
+	# CI artifact staging directories (not committed)
+	rm -rf dist
+	rm -rf download-libs
 	@echo "Clean complete"
 
 # Benchmarks

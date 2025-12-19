@@ -45,18 +45,41 @@ jobs:
           cargo zigbuild --release --target aarch64-unknown-linux-musl -p seekable-zstd-core
 
       - name: Organize Artifacts
+        shell: bash
         run: |
-          mkdir -p dist/linux-amd64
-          cp target/x86_64-unknown-linux-gnu.2.17/release/libseekable_zstd_core.a dist/linux-amd64/
+          set -euo pipefail
 
-          mkdir -p dist/linux-amd64-musl
-          cp target/x86_64-unknown-linux-musl/release/libseekable_zstd_core.a dist/linux-amd64-musl/
+          copy_lib() {
+            target="$1"
+            dest_dir="$2"
 
-          mkdir -p dist/linux-arm64
-          cp target/aarch64-unknown-linux-gnu.2.17/release/libseekable_zstd_core.a dist/linux-arm64/
+            # cargo-zigbuild glibc targets may emit to either:
+            # - target/<triple>.2.17/... (as invoked)
+            # - target/<triple>/... (canonical directory)
+            candidates=("$target")
+            case "$target" in
+              *.2.17) candidates+=("${target%.2.17}") ;;
+            esac
 
-          mkdir -p dist/linux-arm64-musl
-          cp target/aarch64-unknown-linux-musl/release/libseekable_zstd_core.a dist/linux-arm64-musl/
+            for candidate in "${candidates[@]}"; do
+              src="target/${candidate}/release/libseekable_zstd_core.a"
+              if [ -f "$src" ]; then
+                mkdir -p "$dest_dir"
+                cp "$src" "$dest_dir/"
+                return 0
+              fi
+            done
+
+            echo "❌ missing libseekable_zstd_core.a for target: $target"
+            echo "Found these candidate outputs:"
+            find target -maxdepth 4 -path '*/release/libseekable_zstd_core.a' -print || true
+            exit 1
+          }
+
+          copy_lib x86_64-unknown-linux-gnu.2.17 dist/linux-amd64
+          copy_lib x86_64-unknown-linux-musl dist/linux-amd64-musl
+          copy_lib aarch64-unknown-linux-gnu.2.17 dist/linux-arm64
+          copy_lib aarch64-unknown-linux-musl dist/linux-arm64-musl
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

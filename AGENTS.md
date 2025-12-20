@@ -11,6 +11,7 @@
 | Interface   | Definition File                        | Notes                            |
 | ----------- | -------------------------------------- | -------------------------------- |
 | Claude Code | `AGENTS.md` (this file)                | Anthropic CLI, primary interface |
+| Codex CLI   | `AGENTS.md` (this file)                | OpenAI Codex CLI                 |
 | OpenCode    | `AGENTS.md` (this file)                | Open-source terminal interface   |
 | Kilo Code   | `AGENTS.md` (this file)                | VS Code extension                |
 | Cline       | `.cline/rules/` → references this file | VS Code extension                |
@@ -30,10 +31,9 @@
 
 Before making changes, read these documents in order:
 
-1. **[BOOTSTRAP.md](BOOTSTRAP.md)** - Project plan, phases, architecture
-2. **[docs/standards/README.md](docs/standards/README.md)** - Standards index
-3. **[docs/standards/coding/README.md](docs/standards/coding/README.md)** - Cross-language coding standards
-4. **[docs/standards/testing.md](docs/standards/testing.md)** - Test fixtures, parallel verification
+1. **[docs/standards/README.md](docs/standards/README.md)** - Standards index
+2. **[docs/standards/coding/README.md](docs/standards/coding/README.md)** - Cross-language coding standards
+3. **[docs/standards/testing.md](docs/standards/testing.md)** - Test fixtures, parallel verification
 
 Language-specific (as needed):
 
@@ -180,7 +180,7 @@ Co-Authored-By: <interface> <model> <noreply@3leaps.net>
 | Component     | Description            | Examples                                                                            |
 | ------------- | ---------------------- | ----------------------------------------------------------------------------------- |
 | **model**     | The AI model used      | `claude-sonnet-4-20250514`, `claude-opus-4-20250514`, `gpt-4o`, `claude-3.5-sonnet` |
-| **interface** | The agentic interface  | `Claude Code`, `OpenCode`, `Kilo Code`, `Cline`, `Cursor`, `Aider`                  |
+| **interface** | The agentic interface  | `Claude Code`, `Codex CLI`, `OpenCode`, `Kilo Code`, `Cline`, `Cursor`, `Aider`     |
 | **human**     | Supervising maintainer | GitHub handle (e.g., `@3leapsdave`)                                                 |
 | **email**     | Co-author email        | Always `noreply@3leaps.net` (unified for all providers)                             |
 

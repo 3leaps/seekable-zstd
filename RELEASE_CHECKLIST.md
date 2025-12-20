@@ -14,6 +14,8 @@ Publishing to package registries (crates.io / PyPI / npm) is planned for v0.2.x.
 - `docs/cicd.md` (why CI artifacts are required)
 - `docs/go-binding.md` (expected `bindings/go/lib/**` layout)
 - `docs/development.md` (local targets like `make ci-offline`)
+- `docs/release-signing.md` (manual minisign flow)
+- `docs/releases/README.md` (release notes naming)
 
 ---
 
@@ -32,8 +34,9 @@ bindings/go/lib/** to main]
 (workflow_dispatch)]
   E --> F[Tag vX.Y.Z on the commit
 that contains the libs]
-  F --> G[artifacts.yml runs on tag
-and uploads build artifacts]
+  F --> G[release.yml runs on tag
+and uploads release assets]
+  G --> H[Manual signing and upload]
 ```
 
 ---
@@ -42,7 +45,13 @@ and uploads build artifacts]
 
 1. Ensure `main` is green in CI (`.github/workflows/ci.yml`).
 
-2. Prepare committed Go prebuilt libs (release prep)
+2. Run local workflow lint checks:
+
+```bash
+make lint-actions
+```
+
+3. Prepare committed Go prebuilt libs (release prep)
 
 This step produces a commit on `main` that updates `bindings/go/lib/**`. The release tag must point to that commit.
 
@@ -73,7 +82,7 @@ Recommended: **fine-grained PAT** scoped to `3leaps/seekable-zstd` with:
 
 The workflow itself performs the commit via `contents: write` on the `commit-artifacts` job.
 
-3. Validate Linux linking for Go users:
+4. Validate Linux linking for Go users:
 
 **GitHub UI:**
 
@@ -89,13 +98,13 @@ gh run watch --exit-status
 
 Expect both glibc (Debian) and musl (Alpine) jobs to pass.
 
-4. Update versions if needed:
+5. Update versions if needed:
 
 - `make bump-patch` / `make bump-minor` / `make bump-major`
 - Update `CHANGELOG.md`
 - Push the version bump commit.
 
-5. Create the tag on the correct commit:
+6. Create the tag on the correct commit:
 
 - Tag the exact commit SHA that:
   - includes the updated `bindings/go/lib/**`, and
@@ -103,11 +112,28 @@ Expect both glibc (Debian) and musl (Alpine) jobs to pass.
 
 Do not tag a commit newer than the validation run’s SHA.
 
-6. Verify tag build artifacts:
+7. Verify release assets:
 
-- Confirm `.github/workflows/artifacts.yml` ran on the tag and uploaded platform artifacts.
+- Confirm `.github/workflows/release.yml` ran on the tag and uploaded Go bundle assets.
 
-7. Post-release:
+8. Manual signing (local):
+
+- Set environment variables:
+  - `RELEASE_TAG=0.1.1` (pure semver)
+  - `SEEKABLE_ZSTD_RELEASE_TAG=0.1.1` (alias for `RELEASE_TAG`)
+  - `SEEKABLE_ZSTD_MINISIGN_KEY=/path/to/minisign.key`
+  - `SEEKABLE_ZSTD_MINISIGN_PUB=/path/to/minisign.pub`
+- Run the Make targets:
+  - `make release-download`
+  - `make release-checksums`
+  - `make release-sign`
+  - `make release-export-keys`
+  - `make release-upload-signatures`
+
+If you have a release note at `docs/releases/v${RELEASE_TAG}.md`, it is uploaded
+alongside the signatures.
+
+9. Post-release:
 
 - Announce to early Go users which tag to test.
 - Track any required fixes as patch releases.

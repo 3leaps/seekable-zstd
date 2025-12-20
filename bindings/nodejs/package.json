@@ -1,6 +1,6 @@
 {
   "name": "seekable-zstd",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
@@ -27,7 +27,7 @@
     "test": "ava",
     "prepublishOnly": "napi prepublish -t npm",
     "artifacts": "napi artifacts",
-    "version": "napi version"
+    "version": "0.1.1"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",

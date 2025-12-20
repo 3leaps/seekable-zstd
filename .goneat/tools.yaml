@@ -16,6 +16,7 @@ scopes:
   all:
     description: All tools from all scopes
     tools:
+      - checkmake
       - ripgrep
       - jq
       - yq
@@ -31,6 +32,7 @@ scopes:
   foundation:
     description: Core foundation tools required for goneat and basic AI agent operation
     tools:
+      - checkmake
       - ripgrep
       - jq
       - yq
@@ -56,6 +58,19 @@ scopes:
     tools:
       - gitleaks
 tools:
+  checkmake:
+    name: checkmake
+    description: Makefile linter
+    kind: go
+    detect_command: checkmake -v
+    install_package: github.com/mrtazz/checkmake/cmd/checkmake@latest
+    version_args:
+      - -v
+    check_args:
+      - -h
+    installer_priority:
+      all:
+        - go-install
   act:
     name: act
     description: Run GitHub Actions locally

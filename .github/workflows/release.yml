@@ -1,0 +1,175 @@
+# yamllint disable rule:truthy
+name: Release
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build Linux Libs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu,x86_64-unknown-linux-musl,aarch64-unknown-linux-musl
+      - name: Install cargo-zigbuild
+        run: |
+          pip install ziglang
+          cargo install cargo-zigbuild
+      - name: Build AMD64
+        run: |
+          cargo zigbuild --release --target x86_64-unknown-linux-gnu.2.17 -p seekable-zstd-core
+          cargo zigbuild --release --target x86_64-unknown-linux-musl -p seekable-zstd-core
+      - name: Build ARM64
+        run: |
+          cargo zigbuild --release --target aarch64-unknown-linux-gnu.2.17 -p seekable-zstd-core
+          cargo zigbuild --release --target aarch64-unknown-linux-musl -p seekable-zstd-core
+      - name: Organize Artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          copy_lib() {
+            target="$1"
+            dest_dir="$2"
+            candidates=("$target")
+            case "$target" in
+              *.2.17) candidates+=("${target%.2.17}") ;;
+            esac
+            for candidate in "${candidates[@]}"; do
+              src="target/${candidate}/release/libseekable_zstd_core.a"
+              if [ -f "$src" ]; then
+                mkdir -p "$dest_dir"
+                cp "$src" "$dest_dir/"
+                return 0
+              fi
+            done
+            echo "❌ missing libseekable_zstd_core.a for target: $target"
+            find target -maxdepth 4 -path '*/release/libseekable_zstd_core.a' -print || true
+            exit 1
+          }
+          copy_lib x86_64-unknown-linux-gnu.2.17 dist/linux-amd64
+          copy_lib x86_64-unknown-linux-musl dist/linux-amd64-musl
+          copy_lib aarch64-unknown-linux-gnu.2.17 dist/linux-arm64
+          copy_lib aarch64-unknown-linux-musl dist/linux-arm64-musl
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-libs
+          path: dist/*
+
+  build-macos:
+    name: Build macOS Libs
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+      - name: Build
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+        run: |
+          cargo build --release --target x86_64-apple-darwin -p seekable-zstd-core
+          cargo build --release --target aarch64-apple-darwin -p seekable-zstd-core
+      - name: Organize Artifacts
+        run: |
+          mkdir -p dist/darwin-amd64
+          cp target/x86_64-apple-darwin/release/libseekable_zstd_core.a dist/darwin-amd64/
+          mkdir -p dist/darwin-arm64
+          cp target/aarch64-apple-darwin/release/libseekable_zstd_core.a dist/darwin-arm64/
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-libs
+          path: dist/*
+
+  build-windows:
+    name: Build Windows Libs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+      - name: Install cargo-zigbuild
+        run: |
+          pip install ziglang
+          cargo install cargo-zigbuild
+      - name: Build AMD64
+        run: |
+          cargo zigbuild --release --target x86_64-pc-windows-gnu -p seekable-zstd-core
+      - name: Organize Artifacts
+        run: |
+          mkdir -p dist/windows-amd64
+          cp target/x86_64-pc-windows-gnu/release/libseekable_zstd_core.a dist/windows-amd64/
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-libs
+          path: dist/*
+
+  release:
+    name: Publish Release
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate VERSION matches tag
+        run: |
+          set -euo pipefail
+          FILE_VERSION=$(cat VERSION)
+          TAG_VERSION=${GITHUB_REF_NAME#v}
+          echo "VERSION file: $FILE_VERSION"
+          echo "Git tag: $TAG_VERSION"
+          if [ "$FILE_VERSION" != "$TAG_VERSION" ]; then
+            echo "❌ VERSION mismatch: file=$FILE_VERSION tag=$TAG_VERSION"
+            exit 1
+          fi
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: download-libs
+      - name: Package Go libs bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p staging/bindings/go/lib
+          cp -r download-libs/linux-libs/* staging/bindings/go/lib/
+          cp -r download-libs/macos-libs/* staging/bindings/go/lib/
+          cp -r download-libs/windows-libs/* staging/bindings/go/lib/
+          cp VERSION staging/VERSION
+          BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          export BUILD_TIME
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path("staging")
+          manifest = {
+              "tag": os.environ["GITHUB_REF_NAME"],
+              "commit": os.environ["GITHUB_SHA"],
+              "built_at": os.environ["BUILD_TIME"],
+              "paths": [],
+          }
+          for path in sorted(root.rglob("*")):
+              if path.is_file():
+                  manifest["paths"].append(str(path.relative_to(root)))
+          (root / "MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\n")
+          PY
+          mkdir -p dist/release
+          tar -czf "dist/release/seekable-zstd-go-libs-${GITHUB_REF_NAME}.tar.gz" -C staging .
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/release/seekable-zstd-go-libs-${{ github.ref_name }}.tar.gz
+          generate_release_notes: true

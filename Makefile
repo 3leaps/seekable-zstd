@@ -122,6 +122,7 @@ lint:
 	uvx ruff check crates/seekable-zstd-py
 	# TypeScript/JavaScript linting with biome
 	cd bindings/nodejs && npx @biomejs/biome lint .
+	$(MAKE) lint-actions
 	# Check Node.js build (if npm is installed)
 	if command -v npm >/dev/null && [ -d bindings/nodejs/node_modules ]; then \
 		cd bindings/nodejs && npm run build; \
@@ -357,6 +358,72 @@ bootstrap:
 build: build-rust-lib
 	@echo "Build complete"
 
+.PHONY: release-download
+release-download:
+	@set -eu; \
+	tag="$${SEEKABLE_ZSTD_RELEASE_TAG:-$${RELEASE_TAG:-}}"; \
+	if [ -z "$$tag" ]; then echo "RELEASE_TAG or SEEKABLE_ZSTD_RELEASE_TAG is required"; exit 1; fi; \
+	if ! command -v gh >/dev/null 2>&1; then echo "❌ gh not found"; exit 1; fi; \
+	release_tag="v$$tag"; \
+	mkdir -p dist; \
+	echo "→ Downloading release assets for $$release_tag"; \
+	gh release download "$$release_tag" --dir dist
+
+.PHONY: release-checksums
+release-checksums:
+	@set -eu; \
+	if [ ! -d dist ]; then echo "dist/ not found; run make release-download first"; exit 1; fi; \
+	cd dist; \
+	LC_ALL=C find . -maxdepth 1 -type f \
+		! -name "SHA256SUMS" \
+		! -name "SHA512SUMS" \
+		! -name "*.minisig" \
+		! -name "minisign.pub" \
+		-print0 | sort -z | xargs -0 shasum -a 256 > SHA256SUMS; \
+	LC_ALL=C find . -maxdepth 1 -type f \
+		! -name "SHA256SUMS" \
+		! -name "SHA512SUMS" \
+		! -name "*.minisig" \
+		! -name "minisign.pub" \
+		-print0 | sort -z | xargs -0 shasum -a 512 > SHA512SUMS; \
+	echo "→ Wrote dist/SHA256SUMS and dist/SHA512SUMS"
+
+.PHONY: release-sign
+release-sign:
+	@set -eu; \
+	key="$${SEEKABLE_ZSTD_MINISIGN_KEY:-}"; \
+	if [ -z "$$key" ]; then echo "SEEKABLE_ZSTD_MINISIGN_KEY is required"; exit 1; fi; \
+	if [ ! -f "$$key" ]; then echo "minisign key not found: $$key"; exit 1; fi; \
+	minisign -S -m dist/SHA256SUMS -s "$$key"; \
+	minisign -S -m dist/SHA512SUMS -s "$$key"; \
+	echo "→ Signed SHA256SUMS and SHA512SUMS"
+
+.PHONY: release-export-keys
+release-export-keys:
+	@set -eu; \
+	pub="$${SEEKABLE_ZSTD_MINISIGN_PUB:-}"; \
+	if [ -z "$$pub" ]; then echo "SEEKABLE_ZSTD_MINISIGN_PUB is required"; exit 1; fi; \
+	if [ ! -f "$$pub" ]; then echo "minisign pub key not found: $$pub"; exit 1; fi; \
+	cp "$$pub" dist/minisign.pub; \
+	echo "→ Copied minisign.pub to dist/"
+
+.PHONY: release-upload-signatures
+release-upload-signatures:
+	@set -eu; \
+	tag="$${SEEKABLE_ZSTD_RELEASE_TAG:-$${RELEASE_TAG:-}}"; \
+	if [ -z "$$tag" ]; then echo "RELEASE_TAG or SEEKABLE_ZSTD_RELEASE_TAG is required"; exit 1; fi; \
+	if ! command -v gh >/dev/null 2>&1; then echo "❌ gh not found"; exit 1; fi; \
+	release_tag="v$$tag"; \
+	files="dist/SHA256SUMS dist/SHA256SUMS.minisig dist/SHA512SUMS dist/SHA512SUMS.minisig dist/minisign.pub"; \
+	notes="docs/releases/v$$tag.md"; \
+	if [ -f "$$notes" ]; then files="$$files $$notes"; fi; \
+	echo "→ Uploading signatures to $$release_tag"; \
+	gh release upload "$$release_tag" $$files --clobber
+
+.PHONY: release-clean
+release-clean:
+	rm -rf dist
+
 .PHONY: clean
 clean:
 	cargo clean
@@ -429,4 +496,3 @@ _set-version:
 	sed -i '' 's/return ".*"/return "$(VERSION)"/' bindings/go/seekable.go
 	
 	@echo "Updated all versions to $(VERSION)"
-

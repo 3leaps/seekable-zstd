@@ -11,6 +11,7 @@ This means the CI workflows are not just “nice-to-have discipline” — they 
 - **CI builds artifacts continuously**: On every `main` push, we build the prebuilt static libraries and upload them as workflow artifacts.
 - **Tags must include committed libs**: When we cut a release tag (`vX.Y.Z`), that tag should point to a commit that already contains the correct `bindings/go/lib/**` outputs.
 - **Release prep is explicit**: We run a manual “release prep” workflow that commits updated prebuilt libs to `main`. Then we tag that commit.
+- **Signing is manual**: Release assets are built in CI, but checksum signing happens locally with minisign (no private keys in CI).
 
 ---
 
@@ -27,6 +28,11 @@ This means the CI workflows are not just “nice-to-have discipline” — they 
 
 - ` .github/workflows/go-prebuilt-libs.yml`
   - Manual validation job to prove Linux glibc + musl linking against committed `bindings/go/lib/**`
+
+- ` .github/workflows/release.yml`
+  - Runs on tag pushes (`v*`)
+  - Creates or updates the GitHub Release
+  - Uploads the Go prebuilt lib bundle(s) for early consumers
 
 See `RELEASE_CHECKLIST.md` for the release ordering.
 
@@ -72,7 +78,7 @@ The important part is **reproducibility**:
 
 As the project expands, we expect additional artifact needs, such as:
 
-- Signed release bundles
+- Signed release bundles (minisign)
 - Checksums and provenance/attestation
 - More platform variants (Windows, arm64 parity)
 

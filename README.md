@@ -69,6 +69,8 @@ go get github.com/3leaps/seekable-zstd/bindings/go
 
 Go prebuilt libraries:
 
+- Prebuilt libs are committed under `bindings/go/lib/**` in each release tag.
+- The same set is also published as a GitHub Release asset: `seekable-zstd-go-libs-vX.Y.Z.tar.gz`
 - Linux glibc is the default: `bindings/go/lib/linux-<arch>/`
 - Linux musl is explicit: build with `-tags musl` and uses `bindings/go/lib/linux-<arch>-musl/`
 

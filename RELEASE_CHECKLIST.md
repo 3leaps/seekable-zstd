@@ -70,7 +70,7 @@ gh workflow run "Build Artifacts" --ref main -f commit_to_main=true
 gh run watch --exit-status
 ```
 
-## Credentials for `gh`
+### Credentials for `gh`
 
 To run workflow_dispatch from local using `gh`, your token must be able to dispatch workflows in this repo.
 
@@ -81,6 +81,13 @@ Recommended: **fine-grained PAT** scoped to `3leaps/seekable-zstd` with:
 - Contents: Read
 
 The workflow itself performs the commit via `contents: write` on the `commit-artifacts` job.
+
+After the workflow completes, confirm it created a new commit on `main`
+containing updated `bindings/go/lib/**` (record the SHA you plan to tag).
+You can use `git log --oneline -n 5` to find the commit hash and confirm the
+files touched.
+If your local branch is behind, `git fetch origin` and then
+`git pull --ff-only origin main` before tagging.
 
 4. Validate Linux linking for Go users:
 
@@ -112,9 +119,22 @@ Expect both glibc (Debian) and musl (Alpine) jobs to pass.
 
 Do not tag a commit newer than the validation run’s SHA.
 
+Example (tag the validated commit SHA):
+
+```bash
+git tag vX.Y.Z <validated-commit-sha>
+git push origin vX.Y.Z
+```
+
 7. Verify release assets:
 
 - Confirm `.github/workflows/release.yml` ran on the tag and uploaded Go bundle assets.
+  - GitHub UI: Actions → “Release” workflow → confirm the `vX.Y.Z` run.
+  - `gh` example:
+    ```bash
+    gh run list --workflow "Release" --branch main --limit 5
+    gh run view --log --job release <run-id>
+    ```
 
 8. Manual signing (local):
 

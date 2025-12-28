@@ -13,7 +13,7 @@ import (
 
 // Version returns the current library version.
 func Version() string {
-	return "0.1.1"
+	return "0.1.2"
 }
 
 // Reader provides random access to seekable zstd archives.

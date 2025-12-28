@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2025-12-28
+
+### Changed
+
+- **Go docs**: Added troubleshooting section and GitHub Release bundle documentation.
+- **Release process**: Improved checklist with post-workflow verification steps and `gh` examples.
+
 ## [0.1.1] - 2025-12-20
 
 ### Added

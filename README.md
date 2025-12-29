@@ -124,6 +124,26 @@ defer reader.Close()
 data, err := reader.ReadRange(1000, 2000)
 ```
 
+Writing an archive:
+
+```go
+encoder, err := seekable.NewEncoder("out.szst", 0) // 0 = default frame size (256KiB)
+if err != nil {
+    log.Fatal(err)
+}
+
+if _, err := encoder.Write(data); err != nil {
+    _ = encoder.Close()
+    log.Fatal(err)
+}
+
+compressedBytes, err := encoder.Finish()
+if err != nil {
+    log.Fatal(err)
+}
+_ = compressedBytes
+```
+
 ### TypeScript
 
 ```typescript

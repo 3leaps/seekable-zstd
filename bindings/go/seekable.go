@@ -21,6 +21,11 @@ type Reader struct {
 	ptr *C.SeekableDecoder
 }
 
+// Encoder writes seekable zstd archives.
+type Encoder struct {
+	ptr *C.SeekableEncoder
+}
+
 // Open opens a seekable zstd archive for reading.
 func Open(path string) (*Reader, error) {
 	cPath := C.CString(path)
@@ -36,6 +41,24 @@ func Open(path string) (*Reader, error) {
 	}
 
 	return &Reader{ptr: ptr}, nil
+}
+
+// NewEncoder creates a new encoder that writes to a file.
+// frameSize of 0 uses the default (256KiB).
+func NewEncoder(path string, frameSize uint32) (*Encoder, error) {
+	cPath := C.CString(path)
+	defer C.free(unsafe.Pointer(cPath))
+
+	ptr := C.seekable_encoder_new(cPath, C.uint32_t(frameSize))
+	if ptr == nil {
+		errStr := C.seekable_last_error()
+		if errStr == nil {
+			return nil, errors.New("unknown error")
+		}
+		return nil, errors.New(C.GoString(errStr))
+	}
+
+	return &Encoder{ptr: ptr}, nil
 }
 
 // Size returns the decompressed size in bytes.
@@ -140,6 +163,67 @@ func (r *Reader) Close() error {
 	return nil
 }
 
+// Write writes data to the encoder.
+func (e *Encoder) Write(p []byte) (int, error) {
+	if e.ptr == nil {
+		return 0, errors.New("encoder already closed")
+	}
+
+	if len(p) == 0 {
+		return 0, nil
+	}
+
+	res := C.seekable_encoder_write(
+		e.ptr,
+		(*C.uint8_t)(unsafe.Pointer(&p[0])),
+		C.uintptr_t(len(p)),
+	)
+
+	if res < 0 {
+		errStr := C.seekable_last_error()
+		if errStr == nil {
+			return 0, errors.New("write failed: unknown error")
+		}
+		return 0, fmt.Errorf("write failed: %s", C.GoString(errStr))
+	}
+
+	return len(p), nil
+}
+
+// Finish completes the stream, writes the seek table, and closes the file.
+// Returns the total compressed size in bytes.
+func (e *Encoder) Finish() (int64, error) {
+	if e.ptr == nil {
+		return 0, errors.New("encoder already closed")
+	}
+
+	res := C.seekable_encoder_finish(e.ptr)
+	e.ptr = nil
+
+	if res < 0 {
+		errStr := C.seekable_last_error()
+		if errStr == nil {
+			return 0, errors.New("finish failed: unknown error")
+		}
+		return 0, fmt.Errorf("finish failed: %s", C.GoString(errStr))
+	}
+
+	return int64(res), nil
+}
+
+// Close aborts the encoder without finishing. Prefer Finish() for normal completion.
+func (e *Encoder) Close() error {
+	if e.ptr != nil {
+		C.seekable_encoder_close(e.ptr)
+		e.ptr = nil
+	}
+	return nil
+}
+
 // Ensure Reader implements io.Closer and io.ReaderAt
 var _ io.Closer = (*Reader)(nil)
 var _ io.ReaderAt = (*Reader)(nil)
+
+// Ensure Encoder implements io.Writer and io.Closer
+var _ io.Writer = (*Encoder)(nil)
+var _ io.Closer = (*Encoder)(nil)

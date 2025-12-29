@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.2] - 2025-12-28
 
+### Added
+
+- **Go encoder**: Add `Encoder` API to write `.szst` archives from Go.
+- **Encoder C FFI**: Expose encoder functions (`seekable_encoder_*`) for CGO consumers.
+- **Go tests**: Add encoder roundtrip, random-access, empty-file, and abort coverage.
+
 ### Changed
 
 - **Go docs**: Added troubleshooting section and GitHub Release bundle documentation.

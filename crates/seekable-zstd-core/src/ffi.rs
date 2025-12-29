@@ -1,4 +1,5 @@
 use crate::decoder::Decoder;
+use crate::encoder::Encoder;
 use crate::parallel::ParallelDecoder;
 use std::cell::RefCell;
 use std::ffi::{CStr, CString};
@@ -28,6 +29,11 @@ fn set_error(err: &impl ToString) {
 
 pub struct SeekableDecoder {
     inner: Decoder<'static, File>,
+    path: PathBuf,
+}
+
+pub struct SeekableEncoder {
+    inner: Encoder<'static, File>,
     path: PathBuf,
 }
 
@@ -75,6 +81,157 @@ pub unsafe extern "C" fn seekable_open(path: *const c_char) -> *mut SeekableDeco
         path: PathBuf::from(path_str),
     });
     Box::into_raw(boxed)
+}
+
+/// Creates a new seekable zstd encoder that writes to a file.
+///
+/// `frame_size == 0` uses the default frame size (256KiB).
+///
+/// # Safety
+/// `path` must be a valid null-terminated C string.
+/// The returned pointer must be freed with `seekable_encoder_close` or
+/// consumed by `seekable_encoder_finish`.
+#[no_mangle]
+pub unsafe extern "C" fn seekable_encoder_new(
+    path: *const c_char,
+    frame_size: u32,
+) -> *mut SeekableEncoder {
+    if path.is_null() {
+        set_error(&"Path pointer is null");
+        return ptr::null_mut();
+    }
+
+    let c_str = unsafe { CStr::from_ptr(path) };
+    let path_str = match c_str.to_str() {
+        Ok(s) => s,
+        Err(e) => {
+            set_error(&format!("Invalid UTF-8 path: {e}"));
+            return ptr::null_mut();
+        }
+    };
+
+    let file = match File::create(path_str) {
+        Ok(f) => f,
+        Err(e) => {
+            set_error(&format!("Failed to create file: {e}"));
+            return ptr::null_mut();
+        }
+    };
+
+    let encoder = if frame_size == 0 {
+        Encoder::new(file)
+    } else {
+        let Ok(frame_size_usize) = usize::try_from(frame_size) else {
+            set_error(&"Frame size too large for platform pointer width");
+            return ptr::null_mut();
+        };
+        Encoder::with_frame_size(file, frame_size_usize)
+    };
+
+    let encoder = match encoder {
+        Ok(enc) => enc,
+        Err(e) => {
+            set_error(&format!("Failed to create encoder: {e}"));
+            return ptr::null_mut();
+        }
+    };
+
+    let boxed = Box::new(SeekableEncoder {
+        inner: encoder,
+        path: PathBuf::from(path_str),
+    });
+    Box::into_raw(boxed)
+}
+
+/// Writes data to the encoder.
+///
+/// Returns `0` on success; negative values indicate an error.
+///
+/// # Safety
+/// `encoder` must be a valid pointer returned by `seekable_encoder_new`.
+/// `data` must point to a buffer of at least `len` bytes.
+#[no_mangle]
+pub unsafe extern "C" fn seekable_encoder_write(
+    encoder: *mut SeekableEncoder,
+    data: *const u8,
+    len: usize,
+) -> i32 {
+    if encoder.is_null() {
+        set_error(&"Encoder pointer is null");
+        return -1;
+    }
+
+    if len == 0 {
+        return 0;
+    }
+
+    if data.is_null() {
+        set_error(&"Data pointer is null");
+        return -2;
+    }
+
+    let encoder = unsafe { &mut *encoder };
+    let slice = unsafe { std::slice::from_raw_parts(data, len) };
+
+    if let Err(e) = encoder.inner.write_all(slice) {
+        set_error(&format!("Write error: {e}"));
+        return -3;
+    }
+
+    0
+}
+
+/// Finishes the stream, writes the seek table, and closes the file.
+///
+/// Returns the number of bytes written (compressed size) on success, or a
+/// negative value on error.
+///
+/// # Safety
+/// `encoder` must be a valid pointer returned by `seekable_encoder_new`.
+/// After calling this, the encoder is consumed and the pointer is invalid.
+#[no_mangle]
+pub unsafe extern "C" fn seekable_encoder_finish(encoder: *mut SeekableEncoder) -> i64 {
+    if encoder.is_null() {
+        set_error(&"Encoder pointer is null");
+        return -1;
+    }
+
+    let boxed = unsafe { Box::from_raw(encoder) };
+    match boxed.inner.finish() {
+        Ok(written) => {
+            let Ok(v) = i64::try_from(written) else {
+                set_error(&"Compressed size too large for i64");
+                return -4;
+            };
+            v
+        }
+        Err(e) => {
+            set_error(&format!("Finish error: {e}"));
+            -3
+        }
+    }
+}
+
+/// Closes the encoder without finishing (aborts).
+///
+/// Best-effort safety: truncates the output file to `0` bytes after releasing
+/// resources, to avoid leaving an invalid partial archive on disk.
+///
+/// # Safety
+/// `encoder` must be a valid pointer returned by `seekable_encoder_new`.
+#[no_mangle]
+pub unsafe extern "C" fn seekable_encoder_close(encoder: *mut SeekableEncoder) {
+    if encoder.is_null() {
+        return;
+    }
+
+    let boxed = unsafe { Box::from_raw(encoder) };
+    let path = boxed.path.clone();
+    drop(boxed);
+
+    if let Err(e) = File::create(&path) {
+        set_error(&format!("Failed to truncate aborted output file: {e}"));
+    }
 }
 
 /// Returns the total decompressed size of the archive.

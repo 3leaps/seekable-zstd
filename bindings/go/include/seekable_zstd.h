@@ -10,6 +10,8 @@
 
 typedef struct SeekableDecoder SeekableDecoder;
 
+typedef struct SeekableEncoder SeekableEncoder;
+
 /**
  * Opens a seekable zstd archive.
  *
@@ -18,6 +20,52 @@ typedef struct SeekableDecoder SeekableDecoder;
  * The returned pointer must be freed with `seekable_close`.
  */
 struct SeekableDecoder *seekable_open(const char *path);
+
+/**
+ * Creates a new seekable zstd encoder that writes to a file.
+ *
+ * `frame_size == 0` uses the default frame size (256KiB).
+ *
+ * # Safety
+ * `path` must be a valid null-terminated C string.
+ * The returned pointer must be freed with `seekable_encoder_close` or
+ * consumed by `seekable_encoder_finish`.
+ */
+struct SeekableEncoder *seekable_encoder_new(const char *path, uint32_t frame_size);
+
+/**
+ * Writes data to the encoder.
+ *
+ * Returns `0` on success; negative values indicate an error.
+ *
+ * # Safety
+ * `encoder` must be a valid pointer returned by `seekable_encoder_new`.
+ * `data` must point to a buffer of at least `len` bytes.
+ */
+int32_t seekable_encoder_write(struct SeekableEncoder *encoder, const uint8_t *data, uintptr_t len);
+
+/**
+ * Finishes the stream, writes the seek table, and closes the file.
+ *
+ * Returns the number of bytes written (compressed size) on success, or a
+ * negative value on error.
+ *
+ * # Safety
+ * `encoder` must be a valid pointer returned by `seekable_encoder_new`.
+ * After calling this, the encoder is consumed and the pointer is invalid.
+ */
+int64_t seekable_encoder_finish(struct SeekableEncoder *encoder);
+
+/**
+ * Closes the encoder without finishing (aborts).
+ *
+ * Best-effort safety: truncates the output file to `0` bytes after releasing
+ * resources, to avoid leaving an invalid partial archive on disk.
+ *
+ * # Safety
+ * `encoder` must be a valid pointer returned by `seekable_encoder_new`.
+ */
+void seekable_encoder_close(struct SeekableEncoder *encoder);
 
 /**
  * Returns the total decompressed size of the archive.

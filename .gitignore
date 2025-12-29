@@ -1,4 +1,5 @@
 .plans/
+.tmp/
 target/
 # Go: local build outputs (prebuilt libs are committed under bindings/go/lib/<platform>/)
 bindings/go/lib/local/**
